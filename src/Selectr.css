@@ -1,9 +1,13 @@
 .selectr-results {
+  width: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.selectr-item {
+  width: 100%;
+}
 .selectr-item button {
   border: 0;
   background: 0;
@@ -12,4 +16,23 @@
   width: 100%;
   display: block;
   text-align: left;
+}
+
+.selectr-search {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.selectr-wrap {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.selectr-toggle {
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }

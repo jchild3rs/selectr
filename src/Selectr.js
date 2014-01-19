@@ -13,6 +13,7 @@
     
     return this.each(function(i, element) {
       var select = $(element),
+        selectedOption = select.find("option:selected"),
       methods = $.fn.selectr.methods,
       settings = $.extend({}, $.fn.selectr.defaultOptions, options);
 
@@ -22,7 +23,29 @@
       }
 
       var data = methods.createDataModel(select),
-      list = methods.createListFromData(data, settings);
+      list = methods.createListFromData(data),
+      toggleBtn = methods.createToggleButton().text(selectedOption.text()),
+      searchInput = methods.createSingleInput(),
+      drop = $("<div class=\"selectr-drop\"></div>"),
+      wrap = $("<div class=\"selectr-wrap\"></div>").width(settings.width);
+
+      if (!settings.multiple) {
+        drop.append(searchInput, list);
+        wrap.append(toggleBtn, drop);
+      } else {
+        //todo handle multiple
+        wrap = $();
+      }
+      console.log(wrap);
+
+      select.hide().after(wrap);
+
+      // normal html layout
+      // - wrap
+      //   - toggle button
+      //   - drop
+      //     - search field
+      //     - results list
       
     });
     
@@ -42,27 +65,29 @@
       });
       return data;
     },
-    createListFromData: function(data, settings) {
-      var list = $("<ul class=\"" + settings.classPrefix + "-results\"></ul>"), liHtml = "";
+    createListFromData: function(data) {
+      var list = $("<ul class=\"selectr-results\"></ul>"), liHtml = "",
+        ref = this;
       $(data).each(function(i, row) {
-        liHtml += "<li class=\"" + settings.classPrefix + "-item\" id=\"" + settings.classPrefix + "-item-" + i + "\"><button type=\"button\" data-value=\"" + row.value + "\" data-selected=\"" + row.selected +"\">" + row.text + "</button></li>";
+        if (row.value) {
+          liHtml += "<li class=\"selectr-item\" id=\"selectr-item-" + i + "\"><button type=\"button\" data-value=\"" + row.value + "\" data-selected=\"" + row.selected +"\">" + row.text + "</button></li>";
+        }
       });
-      list.width(settings.width).append(liHtml);
+      list.append(liHtml);
       return list;
     },
     createToggleButton: function() {
-      
+      return $("<a class=\"selectr-toggle\"><span></span><div><i></i></div></a>");
     },
     createSingleInput: function() {
-      
+      return $("<input class=\"selectr-search\" type=\"text\" autocomplete=\"off\" />");
     }
   };
 
   // Static method default options.
   $.fn.selectr.defaultOptions = {
-    classPrefix: "selectr", // if this is changed, make sure to update CSS classes.
     width: 350,
-    multiple: false // will be overriden by "multiple" html attribute.
+    multiple: false // will be overridden by "multiple" html attribute.
   };
 
 }(jQuery));
