@@ -25,7 +25,7 @@ describe("Selectr", function() {
     it("should hide the original input", function() {
       return expect(this.select).toBeHidden();
     });
-    return describe("wrapper", function() {
+    describe("wrapper", function() {
       beforeEach(function() {
         return this.wrap = this.select.siblings(".selectr-wrap");
       });
@@ -49,6 +49,15 @@ describe("Selectr", function() {
         expect(wrap.width()).not.toEqual($.fn.selectr.defaultOptions.width);
         expect(wrap.width()).toEqual(500);
         return wrap = null;
+      });
+    });
+    return describe("results", function() {
+      return it("should create a unordered list, within the wrapper, based on the <select>'s data", function() {
+        var list;
+        list = this.select.next(".selectr-wrap").find(".selectr-results");
+        expect(this.select.find("option").get(4).value).toEqual($(list.find("li").get(4)).find("button").text());
+        expect(this.select.find("option").get(7).value).toEqual($(list.find("li").get(7)).find("button").text());
+        return expect(this.select.find("option").get(5).value).not.toEqual($(list.find("li").get(7)).find("button").text());
       });
     });
   });

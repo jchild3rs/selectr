@@ -1,32 +1,47 @@
 (function($) {
   var Selectr;
   Selectr = (function() {
-    var bindEvents, createDataModel, createResultsListFromData, createWrapper;
+    var bindEvents, createDataModel, createResultsListFromData, setupUI;
 
     function Selectr(select, opts) {
       this.select = select;
       this.options = $.extend({}, $.fn.selectr.defaultOptions, opts);
-      this.setupUI();
+      if (this.select.attr("multiple")) {
+        this.options.multiple = true;
+      }
+      setupUI(this.select, this.options);
     }
 
-    Selectr.prototype.setupUI = function() {
-      var dropdownWrap, multiSelectInput, resultsList, searchInput, toggleBtn, wrap;
-      wrap = createWrapper(this.options.width);
-      resultsList = createResultsListFromData(createDataModel(this.select));
-      toggleBtn = $("<a class=\"selectr-toggle\"><span></span><div><i></i></div></a>");
-      toggleBtn.text(this.select.find(":selected").text());
-      searchInput = $("<input class=\"selectr-search\" type=\"text\" autocomplete=\"off\" />");
-      dropdownWrap = $("<div class=\"selectr-drop\"></div>");
-      multiSelectInput = $("<div class=\"selectr-selections\"><ul><li><input type=\"text\" class=\"selectr-ms-input\" /></li></ul></div>");
-      if (this.options.multiple) {
+    setupUI = function(select, options) {
+      var dropdownWrap, multiSelectWrap, resultsList, searchInput, selected, toggleBtn, wrap;
+      selected = select.find(":selected");
+      wrap = $("<div/>", {
+        "class": "selectr-wrap"
+      }).css({
+        width: options.width
+      });
+      toggleBtn = $("<a />", {
+        "class": "selectr-toggle"
+      }).append("<span>" + (selected.text()) + "</span><div><i></i></div>");
+      searchInput = $("<input />", {
+        "class": "selectr-search",
+        type: "text",
+        autocomplete: "off"
+      });
+      dropdownWrap = $("<div />", {
+        "class": "selectr-drop"
+      });
+      multiSelectWrap = $("<div class=\"selectr-selections\"> \n  <ul>\n    <li>\n      <input type=\"text\" class=\"selectr-ms-input\" placeholder=\"" + (selected.text()) + "\" />\n    </li>\n  </ul>\n</div>");
+      resultsList = createResultsListFromData(createDataModel(select));
+      if (options.multiple) {
         dropdownWrap.append(resultsList);
-        wrap.append(multiSelectInput, dropdownWrap);
+        wrap.append(multiSelectWrap, dropdownWrap);
       } else {
         dropdownWrap.append(searchInput, resultsList);
         wrap.append(toggleBtn, dropdownWrap);
       }
       wrap = bindEvents(wrap);
-      return this.select.hide().after(wrap);
+      return select.hide().after(wrap);
     };
 
     bindEvents = function(wrap) {
@@ -40,33 +55,8 @@
       });
       searchInput.on("keypress", function(e) {
         var stroke;
-        stroke = e.which || e.keyCode;
-        return console.log(stroke);
+        return stroke = e.which || e.keyCode;
       });
-      return wrap;
-    };
-
-    /*
-    HTML LAYOUT:
-    --------------
-    if normal                   else if multiselect
-      wrap                        wrap
-        - toggle btn                - search field + toggle btn + selections
-        - drop                      - drop
-          - search field              - results list
-          - results list
-    */
-
-
-    createWrapper = function(width) {
-      var wrap, wrapCss, wrapProps;
-      wrapCss = {
-        width: width
-      };
-      wrapProps = {
-        "class": "selectr-wrap"
-      };
-      wrap = $("<div/>", wrapProps).css(wrapCss);
       return wrap;
     };
 
@@ -89,9 +79,13 @@
       list = $("<ul class=\"selectr-results\"></ul>");
       liHtml = "";
       $(data).each(function(i, row) {
-        if (row.value) {
-          liHtml += "<li class=\"selectr-item\" id=\"selectr-item-" + i + "\"><button type=\"button\" data-value=\"" + row.value + "\" data-selected=\"" + row.selected + "\">" + row.text + "</button></li>";
+        liHtml += "<li class=\"selectr-item\" id=\"selectr-item-" + i + "\"";
+        if (row.value === "") {
+          liHtml += " style=\"display: none;\">";
+        } else {
+          liHtml += ">";
         }
+        liHtml += "<button type=\"button\" data-value=\"" + row.value + "\" data-selected=\"" + row.selected + "\">" + row.text + "</button></li>";
       });
       list.append(liHtml);
       return list;

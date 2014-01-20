@@ -6,7 +6,7 @@ $base-spacing-unit: 3px;
   width: 100%;
   margin: 0;
   padding: 0;
-  font-family: "Arial", sans-serif;
+  position: relative;
   &.selectr-open {
     .selectr-toggle {
       cursor: default;
@@ -54,6 +54,7 @@ $base-spacing-unit: 3px;
 }
 
 .selectr-drop {
+  position: absolute;
   padding: $base-spacing-unit;
   display: none;
   background: #fafafa;
@@ -90,6 +91,25 @@ $base-spacing-unit: 3px;
     display: inline-block;
     font: {
       size: 12px;
+    }
+  }
+}
+
+.selectr-selections {
+  margin: 0;
+  padding: 0;
+  ul, li {
+    margin: 0;
+    padding: 0;
+  }
+  ul {
+    @extend .selectr-toggle;
+  }
+  .selectr-ms-input {
+    background: transparent;
+    border: 0;
+    &:focus {
+      outline: none;
     }
   }
 }

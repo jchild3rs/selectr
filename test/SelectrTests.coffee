@@ -49,5 +49,11 @@ describe "Selectr", ->
         expect(wrap.width()).toEqual(500)
         wrap = null
 
-
+    describe "results", ->
+      it "should create a unordered list, within the wrapper, based on the <select>'s data", ->
+        list = @select.next(".selectr-wrap").find(".selectr-results")
+        # matching indexes of the <option>s against the indexes of the <li>s that are generated.
+        expect(@select.find("option").get(4).value).toEqual($(list.find("li").get(4)).find("button").text())
+        expect(@select.find("option").get(7).value).toEqual($(list.find("li").get(7)).find("button").text())
+        expect(@select.find("option").get(5).value).not.toEqual($(list.find("li").get(7)).find("button").text())
 
