@@ -19,13 +19,16 @@ describe "Selectr", ->
     it "should contain default options", ->
       expect($.fn.selectr.defaultOptions).toBeDefined()
 
+  describe "data model", ->
+    it "should create a data model from the <select>", ->
+
+
   describe "UI setup", ->
 
     it "should hide the original input", ->
       expect(@select).toBeHidden()
 
     describe "wrapper", ->
-
       beforeEach ->
         @wrap = @select.siblings(".selectr-wrap")
       afterEach ->
@@ -41,7 +44,8 @@ describe "Selectr", ->
         expect(@wrap.width()).toEqual($.fn.selectr.defaultOptions.width)
 
       it "should have a width based on user-defined settings", ->
-        wrap = $("#select-fixture").selectr({width: 500}).siblings(".selectr-wrap");
+        wrap = $("#select-fixture").selectr({width: 500}).siblings(".selectr-wrap")
+        expect(wrap.width()).not.toEqual($.fn.selectr.defaultOptions.width)
         expect(wrap.width()).toEqual(500)
         wrap = null
 

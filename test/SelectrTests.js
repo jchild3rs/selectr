@@ -18,6 +18,9 @@ describe("Selectr", function() {
       return expect($.fn.selectr.defaultOptions).toBeDefined();
     });
   });
+  describe("data model", function() {
+    return it("should create a data model from the <select>", function() {});
+  });
   return describe("UI setup", function() {
     it("should hide the original input", function() {
       return expect(this.select).toBeHidden();
@@ -43,6 +46,7 @@ describe("Selectr", function() {
         wrap = $("#select-fixture").selectr({
           width: 500
         }).siblings(".selectr-wrap");
+        expect(wrap.width()).not.toEqual($.fn.selectr.defaultOptions.width);
         expect(wrap.width()).toEqual(500);
         return wrap = null;
       });

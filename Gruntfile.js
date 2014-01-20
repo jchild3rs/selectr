@@ -53,7 +53,7 @@ module.exports = function(grunt) {
     watch: {
       src: {
         files: '<%= jshint.src.src %>',
-        tasks: ['jshint:src', 'karma']
+        tasks: ['jshint:src']
       },
       coffeeSrc: {
         files: ['src/**/*.coffee'],
