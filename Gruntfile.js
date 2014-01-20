@@ -23,7 +23,7 @@ module.exports = function(grunt) {
       dist: {
         src: ['src/<%= pkg.name %>.js'],
         dest: 'dist/<%= pkg.name %>.js'
-      },
+      }
     },
     uglify: {
       options: {
@@ -55,13 +55,48 @@ module.exports = function(grunt) {
         files: '<%= jshint.src.src %>',
         tasks: ['jshint:src', 'karma']
       },
-      test: {
-        files: ['test/**/*.js'],
-        tasks: ['karma']
+      coffeeSrc: {
+        files: ['src/**/*.coffee'],
+        tasks: ['coffee:devSrc']
       },
+      coffeetest: {
+        files: ['test/**/*.coffee'],
+        tasks: ['coffee:devTest']
+      },
+//      test: {
+//        files: ['test/**/*.js'],
+//        tasks: ['karma']
+//      },
       compass: {
         files: ['src/*.scss'],
         tasks: ['compass:dev']
+      }
+    },
+    coffee: {
+      devSrc: {
+        options: {
+          bare: true,
+          sourceMap: true
+        },
+        files: {
+          'src/Selectr.js': 'src/Selectr.coffee'
+        }
+      },
+      devTest: {
+        options: {
+          bare: true
+        },
+        files: {
+          'test/SelectrTests.js': 'test/SelectrTests.coffee'
+        }
+      },
+      dist: {
+        options: {
+          bare: true
+        },
+        files: {
+          'dist/Selectr.js': 'src/Selectr.coffee'
+        }
       }
     },
     compass: {                  // Task
@@ -88,12 +123,13 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-compass');
+  grunt.loadNpmTasks('grunt-contrib-coffee');
   grunt.loadNpmTasks('grunt-karma');
 
 
   // Default task.
   grunt.registerTask('test', ['jshint', 'karma']);
-  grunt.registerTask('default', ['compass:dev', 'jshint', 'karma', 'clean', 'concat', 'uglify']);
-  grunt.registerTask('dist', ['compass:dist', 'jshint', 'karma', 'clean', 'concat', 'uglify']);
+  grunt.registerTask('default', ['compass:dev', 'coffee:dev', 'jshint', 'karma', 'clean', 'concat', 'uglify']);
+  grunt.registerTask('dist', ['compass:dist', 'coffee:dist', 'jshint', 'karma', 'clean', 'concat', 'uglify']);
 
 };

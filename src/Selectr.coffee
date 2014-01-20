@@ -1,30 +1,36 @@
-class Selectr
+(($) ->
 
-  constructor: (@select, opts) ->
-    # merge options w/ default
-    @options = $.extend({}, $.fn.selectr.defaultOptions, opts)
+  class Selectr
 
-    @setupUI()
+    constructor: (@select, opts) ->
 
-  setupUI: ->
+      # merge user provided options w/ defaults
+      @options = $.extend({}, $.fn.selectr.defaultOptions, opts)
 
-    # hide original input
-    @select.hide();
+      @setupUI()
 
-    # create wrap
-    wrapCss =
-      width: @options.width
-    wrapProps =
-      class: "selectr-wrap"
-    wrap = $("<div/>", wrapProps).css(wrapCss)
+    setupUI: ->
+
+      # hide original input
+      @select.hide();
+
+      # create wrap
+      wrapCss =
+        width: @options.width
+      wrapProps =
+        class: "selectr-wrap"
+      wrap = $("<div/>", wrapProps).css(wrapCss)
 
 
-    @select.after(wrap)
+      @select.after(wrap)
 
 
-$.fn.selectr = (options) ->
-  return @.each -> # Ensure chainability and apply to multiple instance at the same time.
-    return new Selectr($(this), options)
+  $.fn.selectr = (options) ->
+    return @.each -> # Ensure chainability and apply to multiple instance at the same time.
+      return new Selectr($(this), options)
 
-$.fn.selectr.defaultOptions =
-  width: 250
+  $.fn.selectr.defaultOptions =
+    width: 250
+
+
+)(jQuery)
