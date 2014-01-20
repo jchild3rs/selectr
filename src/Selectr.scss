@@ -1,0 +1,95 @@
+@import "compass";
+
+$base-spacing-unit: 3px;
+
+.selectr-wrap {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Arial", sans-serif;
+  &.selectr-open {
+    .selectr-toggle {
+      cursor: default;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom: 0;
+    }
+  }
+}
+
+.selectr-results {
+  width: 100%;
+  @include box-sizing(border-box);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 240px;
+  -webkit-overflow-scrolling: touch;
+  .selectr-item {
+    width: 100%;
+    @include box-sizing(border-box);
+    &:hover {
+      background: dodgerblue;
+      button {
+        color: #fff;
+      }
+    }
+    button {
+      border: 0;
+      background: none;
+      padding: 5px 6px;
+      margin: 0;
+      width: 100%;
+      display: block;
+      text-align: left;
+      cursor: pointer;
+      &:focus {
+        outline: none;
+      }
+    }
+  }
+}
+
+.selectr-drop {
+  padding: $base-spacing-unit;
+  display: none;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: 0;
+  .selectr-search {
+    margin-bottom: $base-spacing-unit;
+  }
+}
+.selectr-search {
+  width: 100%;
+  margin: 0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: $base-spacing-unit;
+  @include box-sizing(border-box);
+}
+.selectr-toggle {
+  //  -webkit-appearance: menulist; // interesting idea...
+  @include box-sizing(border-box);
+  padding: 1px $base-spacing-unit;
+  display: block;
+  width: 100%;
+  margin: 0;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  cursor: pointer;
+  span {
+    padding: $base-spacing-unit;
+    display: inline-block;
+    font: {
+      size: 12px;
+    }
+  }
+}
