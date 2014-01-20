@@ -1,6 +1,9 @@
 @import "compass";
 
 $base-spacing-unit: 3px;
+$border-color: #aaa;
+$shadow-color: rgba(0, 0, 0, 0.2);
+$background-color: #fdfdfd;
 
 .selectr-wrap {
   width: 100%;
@@ -13,6 +16,11 @@ $base-spacing-unit: 3px;
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
       border-bottom: 0;
+      @include background-image(linear-gradient(#eee 20%, $background-color 80%));
+      span {
+        border-top: 1px solid $background-color;
+        border-bottom: 1px solid $background-color;
+      }
     }
   }
 }
@@ -40,7 +48,7 @@ $base-spacing-unit: 3px;
     button {
       border: 0;
       background: none;
-      padding: 5px 6px;
+      padding: 7px 6px;
       margin: 0;
       width: 100%;
       display: block;
@@ -55,43 +63,54 @@ $base-spacing-unit: 3px;
 
 .selectr-drop {
   position: absolute;
+  @include box-sizing(border-box);
+  @include box-shadow(0 3px 5px $shadow-color);
+  width: 100%;
   padding: $base-spacing-unit;
   display: none;
-  background: #fafafa;
-  border: 1px solid #ddd;
+  background: $background-color;
+  border: 1px solid $border-color;
   border-radius: 3px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   border-top: 0;
   .selectr-search {
-    margin-bottom: $base-spacing-unit;
+    margin: 0 1% $base-spacing-unit;
   }
 }
 .selectr-search {
-  width: 100%;
+  width: 98%;
   margin: 0;
   border: 1px solid #ccc;
   border-radius: 3px;
   padding: $base-spacing-unit;
   @include box-sizing(border-box);
+  &:focus {
+    outline: none;
+  }
 }
 .selectr-toggle {
+  @include background-image(linear-gradient($background-color 20%, #eee 80%));
   //  -webkit-appearance: menulist; // interesting idea...
   @include box-sizing(border-box);
-  padding: 1px $base-spacing-unit;
+//  padding: 1px $base-spacing-unit;
+  padding: 0;
   display: block;
   width: 100%;
   margin: 0;
-  background: #fafafa;
-  border: 1px solid #ddd;
+  border: 1px solid $border-color;
   border-radius: 3px;
   cursor: pointer;
   span {
-    padding: $base-spacing-unit;
-    display: inline-block;
+    border-top: 1px solid $background-color;
+    border-bottom: 1px solid #eee;
+    @include border-radius(1px);
+    padding: 5px 6px;
+    display: block;
     font: {
       size: 12px;
     }
+    text-shadow: 1px 1px 1px #fff;
   }
 }
 
