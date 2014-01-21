@@ -1,6 +1,7 @@
 (($) ->
 
   # todo: handle optgroup
+  # todo: add selection logic, make sure selection logic updates original <select>
   
   class Selectr
 
@@ -41,30 +42,45 @@
       # hide original input and append new wrapper
       select.hide().after(wrap)
 
+    searchKeyUp = (e, data, wrap) ->
+      stroke = e.which || e.keyCode
+      query = e.currentTarget.value
+      resultContainer = wrap.find(".selectr-results")
+      console.log stroke, query
+      if query.length > 0
+        resultData = searchDataModel(query, data)
+        if resultData.length > 0
+          newResultsList = createResultsListFromData(resultData)
+          resultContainer.replaceWith(newResultsList)
+        else
+          resultContainer.replaceWith("""
+          <ul class='selectr-results no-results'><li class='selectr-item'>No results found for <b>#{query}</b></li></ul>
+          """)
+      else
+        # reset list
+        newResultsList = createResultsListFromData(data)
+        wrap.find(".selectr-results").replaceWith(newResultsList)
 
-    bindEvents = (select, wrap) ->
+    toggleClick = (drop, wrap, searchInput) ->
+      if (!drop.is(":visible"))
+        drop.show()
+        wrap.addClass "selectr-open"
+        searchInput.focus()
+      else
+        drop.hide()
+        wrap.removeClass "selectr-open"
+    resultClick = ->
+
+    bindEvents = (select, wrap, events) ->
       toggleBtn = wrap.find ".selectr-toggle"
       drop = wrap.find ".selectr-drop"
       searchInput = wrap.find ".selectr-search"
       resultsList = wrap.find ".selectr-results"
-      data = createDataModel(resultsList)
+      data = createDataModel resultsList
 
-      drop.delegate ".selectr-results button", "click", ->
-        # todo add selection logic
-
-      toggleBtn.click (e) ->
-        drop.toggle()
-        wrap.toggleClass "selectr-open"
-        searchInput.focus()
-
-      searchInput.on "keyup", debounce 250, (e) ->
-        stroke = e.which || e.keyCode
-        query = e.currentTarget.value
-
-        # todo validate stroke
-        results = searchDataModel(query, data)
-        newResultsList = createResultsListFromData(results)
-        wrap.find(".selectr-results").replaceWith(newResultsList)
+      drop.delegate ".selectr-results button", "click", -> resultClick()
+      toggleBtn.click (e) -> toggleClick(drop, wrap, searchInput)
+      searchInput.keyup debounce 250, (e) -> searchKeyUp(e, data, wrap)
 
       return wrap
 
@@ -78,12 +94,14 @@
             text: $(this).find("button").text()
             value: $(this).find("button").data("value")
             selected: $(this).find("button").data("selected")
+          return
       else
         options.each ->
           data.push
             text: $(this).text()
             value: $(this).val()
             selected: $(this).is(":selected")
+          return
       data
 
     searchDataModel = (query, model) ->
@@ -91,12 +109,13 @@
       $(model).each (i, item) ->
         match = item.text.match(new RegExp(query, "ig"))
         if match?
-          match = match[0] if match.length is 1
+          match = if match.length is 1 then match[0] else match
           matches.push({
             text: item.text.replace(match, "<b>" + match + "</b>"),
             value: item.value,
             selected: item.selected
           })
+        return
       return matches
 
 
@@ -104,7 +123,6 @@
       list = $("<ul class=\"selectr-results\"></ul>")
       liHtml = ""
       $(data).each (i, row) ->
-        
         liHtml += "<li class=\"selectr-item\" id=\"selectr-item-#{i}\""
         if row.value is ""
           liHtml += " style=\"display: none;\">"
@@ -117,7 +135,7 @@
 
     debounce = (threshold, func, execAsap) ->
       timeout = undefined
-      debounced = ->
+      return ->
         delayed = ->
           func.apply obj, args  unless execAsap
           timeout = null
@@ -128,6 +146,23 @@
         else func.apply obj, args  if execAsap
         timeout = setTimeout(delayed, threshold or 100)
 
+    # determines if key code is worthy of firing a search
+    isValidKeyCode = (code) ->
+      validAlpha = (code >= 65 and code <= 90)
+      # alpha a-Z = 65-90
+      validNumber = (code >= 48 and code <= 57)
+      # numbers (0-9) = 48-57
+      validPunc = (code >= 185 and code <= 192) or (code >= 219 and code <= 222) and code isnt 220
+      # punc = 186-192, 219-222 (except back slash, which breaks regex)
+      validMath = (code >= 106 and code <= 111)
+      # math = 106-111
+      space = (code == 32)
+      # space = 32
+      backspaceOrDelete = (code is 8 or code is 46)
+      # backspace/delete = 8, 46
+      return validAlpha or validNumber or validPunc or validMath or code is space or code is backspaceOrDelete
+
+
 
   $.fn.selectr = (options) ->
     return @.each -> # Ensure chainability and apply to multiple instance at the same time.
@@ -135,6 +170,7 @@
 
   $.fn.selectr.defaultOptions =
     width: 250
+    onResultSelect: ->
 
 
 )(jQuery)

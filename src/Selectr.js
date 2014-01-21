@@ -1,7 +1,7 @@
 (function($) {
   var Selectr;
   Selectr = (function() {
-    var bindEvents, createDataModel, createResultsListFromData, debounce, searchDataModel, setupUI;
+    var bindEvents, createDataModel, createResultsListFromData, debounce, isValidKeyCode, resultClick, searchDataModel, searchKeyUp, setupUI, toggleClick;
 
     function Selectr(select, opts) {
       this.select = select;
@@ -44,26 +44,54 @@
       return select.hide().after(wrap);
     };
 
-    bindEvents = function(select, wrap) {
+    searchKeyUp = function(e, data, wrap) {
+      var newResultsList, query, resultContainer, resultData, stroke;
+      stroke = e.which || e.keyCode;
+      query = e.currentTarget.value;
+      resultContainer = wrap.find(".selectr-results");
+      console.log(stroke, query);
+      if (query.length > 0) {
+        resultData = searchDataModel(query, data);
+        if (resultData.length > 0) {
+          newResultsList = createResultsListFromData(resultData);
+          return resultContainer.replaceWith(newResultsList);
+        } else {
+          return resultContainer.replaceWith("<ul class='selectr-results no-results'><li class='selectr-item'>No results found for <b>" + query + "</b></li></ul>");
+        }
+      } else {
+        newResultsList = createResultsListFromData(data);
+        return wrap.find(".selectr-results").replaceWith(newResultsList);
+      }
+    };
+
+    toggleClick = function(drop, wrap, searchInput) {
+      if (!drop.is(":visible")) {
+        drop.show();
+        wrap.addClass("selectr-open");
+        return searchInput.focus();
+      } else {
+        drop.hide();
+        return wrap.removeClass("selectr-open");
+      }
+    };
+
+    resultClick = function() {};
+
+    bindEvents = function(select, wrap, events) {
       var data, drop, resultsList, searchInput, toggleBtn;
       toggleBtn = wrap.find(".selectr-toggle");
       drop = wrap.find(".selectr-drop");
       searchInput = wrap.find(".selectr-search");
       resultsList = wrap.find(".selectr-results");
       data = createDataModel(resultsList);
-      drop.delegate(".selectr-results button", "click", function() {});
-      toggleBtn.click(function(e) {
-        drop.toggle();
-        wrap.toggleClass("selectr-open");
-        return searchInput.focus();
+      drop.delegate(".selectr-results button", "click", function() {
+        return resultClick();
       });
-      searchInput.on("keyup", debounce(250, function(e) {
-        var newResultsList, query, results, stroke;
-        stroke = e.which || e.keyCode;
-        query = e.currentTarget.value;
-        results = searchDataModel(query, data);
-        newResultsList = createResultsListFromData(results);
-        return wrap.find(".selectr-results").replaceWith(newResultsList);
+      toggleBtn.click(function(e) {
+        return toggleClick(drop, wrap, searchInput);
+      });
+      searchInput.keyup(debounce(250, function(e) {
+        return searchKeyUp(e, data, wrap);
       }));
       return wrap;
     };
@@ -75,7 +103,7 @@
       if (options.length === 0) {
         lis = $(el).find("li");
         lis.each(function() {
-          return data.push({
+          data.push({
             text: $(this).find("button").text(),
             value: $(this).find("button").data("value"),
             selected: $(this).find("button").data("selected")
@@ -83,7 +111,7 @@
         });
       } else {
         options.each(function() {
-          return data.push({
+          data.push({
             text: $(this).text(),
             value: $(this).val(),
             selected: $(this).is(":selected")
@@ -100,10 +128,8 @@
         var match;
         match = item.text.match(new RegExp(query, "ig"));
         if (match != null) {
-          if (match.length === 1) {
-            match = match[0];
-          }
-          return matches.push({
+          match = match.length === 1 ? match[0] : match;
+          matches.push({
             text: item.text.replace(match, "<b>" + match + "</b>"),
             value: item.value,
             selected: item.selected
@@ -131,9 +157,9 @@
     };
 
     debounce = function(threshold, func, execAsap) {
-      var debounced, timeout;
+      var timeout;
       timeout = void 0;
-      return debounced = function() {
+      return function() {
         var args, delayed, obj;
         delayed = function() {
           if (!execAsap) {
@@ -154,6 +180,17 @@
       };
     };
 
+    isValidKeyCode = function(code) {
+      var backspaceOrDelete, space, validAlpha, validMath, validNumber, validPunc;
+      validAlpha = code >= 65 && code <= 90;
+      validNumber = code >= 48 && code <= 57;
+      validPunc = (code >= 185 && code <= 192) || (code >= 219 && code <= 222) && code !== 220;
+      validMath = code >= 106 && code <= 111;
+      space = code === 32;
+      backspaceOrDelete = code === 8 || code === 46;
+      return validAlpha || validNumber || validPunc || validMath || code === space || code === backspaceOrDelete;
+    };
+
     return Selectr;
 
   })();
@@ -163,7 +200,8 @@
     });
   };
   return $.fn.selectr.defaultOptions = {
-    width: 250
+    width: 250,
+    onResultSelect: function() {}
   };
 })(jQuery);
 

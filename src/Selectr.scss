@@ -47,8 +47,18 @@ $icon-spacing: 5px;
   overflow-y: auto;
   max-height: 240px;
   -webkit-overflow-scrolling: touch;
+  &.no-results {
+    .selectr-item {
+      padding: 7px 6px;
+      &:hover {
+        background: transparent;
+        color: #333;
+      }
+    }
+  }
   .selectr-item {
     width: 100%;
+    font-size: 12px;
     @include box-sizing(border-box);
     &:hover {
       background: dodgerblue;
@@ -67,6 +77,10 @@ $icon-spacing: 5px;
       cursor: pointer;
       &:focus {
         outline: none;
+      }
+      b {
+        font-weight: bold;
+        text-decoration: underline;
       }
     }
   }
