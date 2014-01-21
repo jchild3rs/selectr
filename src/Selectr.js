@@ -176,20 +176,42 @@
       data = [];
       if (options.length === 0) {
         lis = $(el).find("li");
-        lis.each(function() {
-          data.push({
-            text: $(this).find("button").text(),
-            value: $(this).find("button").data("value"),
-            selected: $(this).find("button").data("selected")
-          });
+        lis.each(function(i, li) {
+          var alreadyExists;
+          alreadyExists = false;
+          if (data.length > 0) {
+            $(data).each(function(i, storedItem) {
+              if (storedItem.value === $(li).find("button").data("value")) {
+                alreadyExists = true;
+              }
+            });
+          }
+          if (!alreadyExists) {
+            data.push({
+              text: $(li).find("button").text(),
+              value: $(li).find("button").data("value"),
+              selected: $(li).find("button").data("selected")
+            });
+          }
         });
       } else {
-        options.each(function() {
-          data.push({
-            text: $(this).text(),
-            value: $(this).val(),
-            selected: $(this).is(":selected")
-          });
+        options.each(function(i, option) {
+          var alreadyExists;
+          alreadyExists = false;
+          if (data.length > 0) {
+            $(data).each(function(i, storedItem) {
+              if (storedItem.value === $(option).val()) {
+                alreadyExists = true;
+              }
+            });
+          }
+          if (!alreadyExists) {
+            data.push({
+              text: $(option).text(),
+              value: $(option).val(),
+              selected: $(option).is(":selected")
+            });
+          }
         });
       }
       return data;

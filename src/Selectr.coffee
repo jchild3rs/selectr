@@ -150,18 +150,32 @@
       data = []
       if options.length is 0
         lis = $(el).find("li")
-        lis.each ->
-          data.push
-            text: $(this).find("button").text()
-            value: $(this).find("button").data("value")
-            selected: $(this).find("button").data("selected")
+        lis.each (i, li) ->
+          alreadyExists = false
+          if data.length > 0
+            $(data).each (i, storedItem) ->
+              if storedItem.value is $(li).find("button").data("value")
+                alreadyExists = true
+              return
+          if !alreadyExists
+            data.push
+              text: $(li).find("button").text()
+              value: $(li).find("button").data("value")
+              selected: $(li).find("button").data("selected")
           return
       else
-        options.each ->
-          data.push
-            text: $(this).text()
-            value: $(this).val()
-            selected: $(this).is(":selected")
+        options.each (i, option)->
+          alreadyExists = false
+          if data.length > 0
+            $(data).each (i, storedItem) ->
+              if storedItem.value is $(option).val()
+                alreadyExists = true
+              return
+          if !alreadyExists
+            data.push
+              text: $(option).text()
+              value: $(option).val()
+              selected: $(option).is(":selected")
           return
       data
 
