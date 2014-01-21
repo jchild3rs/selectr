@@ -27,8 +27,7 @@
         </div>
       """)
 
-      data = createDataModel(select)
-      resultsList = createResultsListFromData(data)
+      resultsList = createResultsListFromData(createDataModel(select))
 
       if options.multiple
         dropdownWrap.append resultsList
@@ -37,37 +36,37 @@
         dropdownWrap.append searchInput, resultsList
         wrap.append toggleBtn, dropdownWrap
 
-      wrap = bindEvents(select, wrap, data)
+      wrap = bindEvents(select, wrap)
 
       # hide original input and append new wrapper
       select.hide().after(wrap)
 
 
-    bindEvents = (select, wrap, originalData) ->
+    bindEvents = (select, wrap) ->
       toggleBtn = wrap.find ".selectr-toggle"
       drop = wrap.find ".selectr-drop"
       searchInput = wrap.find ".selectr-search"
       resultsList = wrap.find ".selectr-results"
       data = createDataModel(resultsList)
 
-      toggleBtn.click ->
+      drop.delegate ".selectr-results button", "click", ->
+        # todo add selection logic
+
+      toggleBtn.click (e) ->
         drop.toggle()
         wrap.toggleClass "selectr-open"
+        searchInput.focus()
 
       searchInput.on "keyup", debounce 250, (e) ->
         stroke = e.which || e.keyCode
         query = e.currentTarget.value
 
-        results = searchDataModel(query, originalData)
-        if (!results)
-          newResultsList = createResultsListFromData(originalData)
-        else
-          newResultsList = createResultsListFromData(results)
-        wrap.find(".selectr-results").remove()
-        searchInput.after(newResultsList);
+        # todo validate stroke
+        results = searchDataModel(query, data)
+        newResultsList = createResultsListFromData(results)
+        wrap.find(".selectr-results").replaceWith(newResultsList)
 
-
-      wrap
+      return wrap
 
     createDataModel = (el) ->
       options = $(el).find("option")
@@ -93,8 +92,11 @@
         match = item.text.match(new RegExp(query, "ig"))
         if match?
           match = match[0] if match.length is 1
-          item.text = item.text.replace(match, "<b>" + match + "</b>")
-          matches.push(item)
+          matches.push({
+            text: item.text.replace(match, "<b>" + match + "</b>"),
+            value: item.value,
+            selected: item.selected
+          })
       return matches
 
 

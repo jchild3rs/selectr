@@ -96,9 +96,9 @@ $icon-spacing: 5px;
   border-radius: 3px;
   padding: $base-spacing-unit;
   @include box-sizing(border-box);
-  &:focus {
-    outline: none;
-  }
+//  &:focus {
+//    outline: none;
+//  }
 }
 .selectr-toggle {
   @include background-image(linear-gradient($background-color 20%, #eee 80%));

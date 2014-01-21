@@ -8,7 +8,8 @@ describe("Selectr", function() {
   });
   afterEach(function() {
     this.select = null;
-    return this.instance = null;
+    this.instance = null;
+    return $('.selectr-wrap').remove();
   });
   it("should be chainable", function() {
     return expect(this.instance).toEqual(this.select);
@@ -18,7 +19,7 @@ describe("Selectr", function() {
       return expect($.fn.selectr.defaultOptions).toBeDefined();
     });
   });
-  describe("UI setup", function() {
+  return describe("UI setup", function() {
     it("should hide the original input", function() {
       return expect(this.select).toBeHidden();
     });
@@ -47,8 +48,14 @@ describe("Selectr", function() {
         expect(wrap.width()).toEqual(500);
         return wrap = null;
       });
-      return it("should have a certain html layout if default", function() {
+      it("should have a certain html layout if default", function() {
         return expect(this.wrap.find("> .selectr-toggle, > .selectr-search, > .selectr-drop")).toExist();
+      });
+      return it("should have the class `.selectr-open` when the toggle is clicked", function() {
+        var toggle;
+        toggle = this.wrap.find(".selectr-toggle");
+        toggle.trigger("click");
+        return expect(this.wrap).toHaveClass("selectr-open");
       });
     });
     return describe("results", function() {
@@ -62,5 +69,4 @@ describe("Selectr", function() {
       });
     });
   });
-  return describe("search", function() {});
 });

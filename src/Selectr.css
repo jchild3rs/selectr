@@ -121,10 +121,6 @@
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
-/* line 99, Selectr.scss */
-.selectr-search:focus {
-  outline: none;
-}
 
 /* line 103, Selectr.scss */
 .selectr-toggle, .selectr-selections ul {

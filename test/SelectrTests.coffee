@@ -9,6 +9,7 @@ describe "Selectr", ->
   afterEach ->
     @select = null
     @instance = null
+    $('.selectr-wrap').remove()
 
   it "should be chainable", ->
     expect(@instance).toEqual(@select)
@@ -47,6 +48,13 @@ describe "Selectr", ->
       it "should have a certain html layout if default", ->
         expect(@wrap.find("> .selectr-toggle, > .selectr-search, > .selectr-drop")).toExist()
 
+      it "should have the class `.selectr-open` when the toggle is clicked", ->
+        toggle = @wrap.find(".selectr-toggle")
+        toggle.trigger "click"
+        expect(@wrap).toHaveClass "selectr-open"
+
+
+
     describe "results", ->
       it "should create a unordered list, within the wrapper, using the <select>'s data", ->
         list = @select.next(".selectr-wrap").find(".selectr-results")
@@ -55,7 +63,4 @@ describe "Selectr", ->
         expect(@select.find("option").get(4).value).toEqual($(list.find("li").get(4)).find("button").text())
         expect(@select.find("option").get(7).value).toEqual($(list.find("li").get(7)).find("button").text())
         expect(@select.find("option").get(5).value).not.toEqual($(list.find("li").get(7)).find("button").text())
-
-  describe "search", ->
-
 

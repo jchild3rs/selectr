@@ -13,7 +13,7 @@
     }
 
     setupUI = function(select, options) {
-      var data, dropdownWrap, multiSelectWrap, resultsList, searchInput, selected, toggleBtn, wrap;
+      var dropdownWrap, multiSelectWrap, resultsList, searchInput, selected, toggleBtn, wrap;
       selected = select.find(":selected");
       wrap = $("<div/>", {
         "class": "selectr-wrap"
@@ -32,8 +32,7 @@
         "class": "selectr-drop"
       });
       multiSelectWrap = $("<div class=\"selectr-selections\"> \n  <ul>\n    <li>\n      <input type=\"text\" class=\"selectr-ms-input\" placeholder=\"" + (selected.text()) + "\" />\n    </li>\n  </ul>\n</div>");
-      data = createDataModel(select);
-      resultsList = createResultsListFromData(data);
+      resultsList = createResultsListFromData(createDataModel(select));
       if (options.multiple) {
         dropdownWrap.append(resultsList);
         wrap.append(multiSelectWrap, dropdownWrap);
@@ -41,33 +40,30 @@
         dropdownWrap.append(searchInput, resultsList);
         wrap.append(toggleBtn, dropdownWrap);
       }
-      wrap = bindEvents(select, wrap, data);
+      wrap = bindEvents(select, wrap);
       return select.hide().after(wrap);
     };
 
-    bindEvents = function(select, wrap, originalData) {
+    bindEvents = function(select, wrap) {
       var data, drop, resultsList, searchInput, toggleBtn;
       toggleBtn = wrap.find(".selectr-toggle");
       drop = wrap.find(".selectr-drop");
       searchInput = wrap.find(".selectr-search");
       resultsList = wrap.find(".selectr-results");
       data = createDataModel(resultsList);
-      toggleBtn.click(function() {
+      drop.delegate(".selectr-results button", "click", function() {});
+      toggleBtn.click(function(e) {
         drop.toggle();
-        return wrap.toggleClass("selectr-open");
+        wrap.toggleClass("selectr-open");
+        return searchInput.focus();
       });
       searchInput.on("keyup", debounce(250, function(e) {
         var newResultsList, query, results, stroke;
         stroke = e.which || e.keyCode;
         query = e.currentTarget.value;
-        results = searchDataModel(query, originalData);
-        if (!results) {
-          newResultsList = createResultsListFromData(originalData);
-        } else {
-          newResultsList = createResultsListFromData(results);
-        }
-        wrap.find(".selectr-results").remove();
-        return searchInput.after(newResultsList);
+        results = searchDataModel(query, data);
+        newResultsList = createResultsListFromData(results);
+        return wrap.find(".selectr-results").replaceWith(newResultsList);
       }));
       return wrap;
     };
@@ -107,8 +103,11 @@
           if (match.length === 1) {
             match = match[0];
           }
-          item.text = item.text.replace(match, "<b>" + match + "</b>");
-          return matches.push(item);
+          return matches.push({
+            text: item.text.replace(match, "<b>" + match + "</b>"),
+            value: item.value,
+            selected: item.selected
+          });
         }
       });
       return matches;
