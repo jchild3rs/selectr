@@ -1,7 +1,7 @@
 (function($) {
   var Selectr;
   Selectr = (function() {
-    var bindEvents, createDataModel, createResultsListFromData, setupUI;
+    var bindEvents, createDataModel, createResultsListFromData, debounce, searchDataModel, setupUI;
 
     function Selectr(select, opts) {
       this.select = select;
@@ -13,7 +13,7 @@
     }
 
     setupUI = function(select, options) {
-      var dropdownWrap, multiSelectWrap, resultsList, searchInput, selected, toggleBtn, wrap;
+      var data, dropdownWrap, multiSelectWrap, resultsList, searchInput, selected, toggleBtn, wrap;
       selected = select.find(":selected");
       wrap = $("<div/>", {
         "class": "selectr-wrap"
@@ -32,7 +32,8 @@
         "class": "selectr-drop"
       });
       multiSelectWrap = $("<div class=\"selectr-selections\"> \n  <ul>\n    <li>\n      <input type=\"text\" class=\"selectr-ms-input\" placeholder=\"" + (selected.text()) + "\" />\n    </li>\n  </ul>\n</div>");
-      resultsList = createResultsListFromData(createDataModel(select));
+      data = createDataModel(select);
+      resultsList = createResultsListFromData(data);
       if (options.multiple) {
         dropdownWrap.append(resultsList);
         wrap.append(multiSelectWrap, dropdownWrap);
@@ -40,38 +41,77 @@
         dropdownWrap.append(searchInput, resultsList);
         wrap.append(toggleBtn, dropdownWrap);
       }
-      wrap = bindEvents(wrap);
+      wrap = bindEvents(select, wrap, data);
       return select.hide().after(wrap);
     };
 
-    bindEvents = function(wrap) {
-      var drop, searchInput, toggleBtn;
+    bindEvents = function(select, wrap, originalData) {
+      var data, drop, resultsList, searchInput, toggleBtn;
       toggleBtn = wrap.find(".selectr-toggle");
       drop = wrap.find(".selectr-drop");
       searchInput = wrap.find(".selectr-search");
+      resultsList = wrap.find(".selectr-results");
+      data = createDataModel(resultsList);
       toggleBtn.click(function() {
         drop.toggle();
         return wrap.toggleClass("selectr-open");
       });
-      searchInput.on("keypress", function(e) {
-        var stroke;
-        return stroke = e.which || e.keyCode;
-      });
+      searchInput.on("keyup", debounce(250, function(e) {
+        var newResultsList, query, results, stroke;
+        stroke = e.which || e.keyCode;
+        query = e.currentTarget.value;
+        results = searchDataModel(query, originalData);
+        if (!results) {
+          newResultsList = createResultsListFromData(originalData);
+        } else {
+          newResultsList = createResultsListFromData(results);
+        }
+        wrap.find(".selectr-results").remove();
+        return searchInput.after(newResultsList);
+      }));
       return wrap;
     };
 
-    createDataModel = function(select) {
-      var data, options;
-      options = $(select).find("option");
+    createDataModel = function(el) {
+      var data, lis, options;
+      options = $(el).find("option");
       data = [];
-      options.each(function() {
-        return data.push({
-          text: $(this).text(),
-          value: $(this).val(),
-          selected: $(this).is(":selected")
+      if (options.length === 0) {
+        lis = $(el).find("li");
+        lis.each(function() {
+          return data.push({
+            text: $(this).find("button").text(),
+            value: $(this).find("button").data("value"),
+            selected: $(this).find("button").data("selected")
+          });
         });
-      });
+      } else {
+        options.each(function() {
+          return data.push({
+            text: $(this).text(),
+            value: $(this).val(),
+            selected: $(this).is(":selected")
+          });
+        });
+      }
       return data;
+    };
+
+    searchDataModel = function(query, model) {
+      var matches;
+      matches = [];
+      $(model).each(function(i, item) {
+        var match;
+        match = item.text.match(new RegExp(query, "ig"));
+        if (match != null) {
+          if (match.length === 1) {
+            match = match[0];
+          }
+          item.text = item.text.replace(match, "<b>" + match + "</b>");
+          return matches.push(item);
+        }
+      });
+      return matches;
     };
 
     createResultsListFromData = function(data) {
@@ -89,6 +129,30 @@
       });
       list.append(liHtml);
       return list;
+    };
+
+    debounce = function(threshold, func, execAsap) {
+      var debounced, timeout;
+      timeout = void 0;
+      return debounced = function() {
+        var args, delayed, obj;
+        delayed = function() {
+          if (!execAsap) {
+            func.apply(obj, args);
+          }
+          return timeout = null;
+        };
+        obj = this;
+        args = arguments;
+        if (timeout) {
+          clearTimeout(timeout);
+        } else {
+          if (execAsap) {
+            func.apply(obj, args);
+          }
+        }
+        return timeout = setTimeout(delayed, threshold || 100);
+      };
     };
 
     return Selectr;

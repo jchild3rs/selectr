@@ -27,7 +27,8 @@
         </div>
       """)
 
-      resultsList = createResultsListFromData(createDataModel(select))
+      data = createDataModel(select)
+      resultsList = createResultsListFromData(data)
 
       if options.multiple
         dropdownWrap.append resultsList
@@ -36,33 +37,66 @@
         dropdownWrap.append searchInput, resultsList
         wrap.append toggleBtn, dropdownWrap
 
-      wrap = bindEvents(wrap)
+      wrap = bindEvents(select, wrap, data)
 
       # hide original input and append new wrapper
       select.hide().after(wrap)
 
 
-    bindEvents = (wrap) ->
+    bindEvents = (select, wrap, originalData) ->
       toggleBtn = wrap.find ".selectr-toggle"
       drop = wrap.find ".selectr-drop"
       searchInput = wrap.find ".selectr-search"
+      resultsList = wrap.find ".selectr-results"
+      data = createDataModel(resultsList)
+
       toggleBtn.click ->
         drop.toggle()
         wrap.toggleClass "selectr-open"
 
-      searchInput.on "keypress", (e) ->
+      searchInput.on "keyup", debounce 250, (e) ->
         stroke = e.which || e.keyCode
+        query = e.currentTarget.value
+
+        results = searchDataModel(query, originalData)
+        if (!results)
+          newResultsList = createResultsListFromData(originalData)
+        else
+          newResultsList = createResultsListFromData(results)
+        wrap.find(".selectr-results").remove()
+        searchInput.after(newResultsList);
+
+
       wrap
 
-    createDataModel = (select) ->
-      options = $(select).find("option")
+    createDataModel = (el) ->
+      options = $(el).find("option")
       data = []
-      options.each ->
-        data.push
-          text: $(this).text()
-          value: $(this).val()
-          selected: $(this).is(":selected")
+      if options.length is 0
+        lis = $(el).find("li")
+        lis.each ->
+          data.push
+            text: $(this).find("button").text()
+            value: $(this).find("button").data("value")
+            selected: $(this).find("button").data("selected")
+      else
+        options.each ->
+          data.push
+            text: $(this).text()
+            value: $(this).val()
+            selected: $(this).is(":selected")
       data
+
+    searchDataModel = (query, model) ->
+      matches = []
+      $(model).each (i, item) ->
+        match = item.text.match(new RegExp(query, "ig"))
+        if match?
+          match = match[0] if match.length is 1
+          item.text = item.text.replace(match, "<b>" + match + "</b>")
+          matches.push(item)
+      return matches
+
 
     createResultsListFromData = (data) ->
       list = $("<ul class=\"selectr-results\"></ul>")
@@ -78,6 +112,19 @@
         return
       list.append liHtml
       list
+
+    debounce = (threshold, func, execAsap) ->
+      timeout = undefined
+      debounced = ->
+        delayed = ->
+          func.apply obj, args  unless execAsap
+          timeout = null
+        obj = this
+        args = arguments
+        if timeout
+          clearTimeout timeout
+        else func.apply obj, args  if execAsap
+        timeout = setTimeout(delayed, threshold or 100)
 
 
   $.fn.selectr = (options) ->

@@ -18,10 +18,7 @@ describe("Selectr", function() {
       return expect($.fn.selectr.defaultOptions).toBeDefined();
     });
   });
-  describe("data model", function() {
-    return it("should create a data model from the <select>", function() {});
-  });
-  return describe("UI setup", function() {
+  describe("UI setup", function() {
     it("should hide the original input", function() {
       return expect(this.select).toBeHidden();
     });
@@ -52,13 +49,15 @@ describe("Selectr", function() {
       });
     });
     return describe("results", function() {
-      return it("should create a unordered list, within the wrapper, based on the <select>'s data", function() {
+      return it("should create a unordered list, within the wrapper, using the <select>'s data", function() {
         var list;
         list = this.select.next(".selectr-wrap").find(".selectr-results");
+        expect(this.select.find("option")).toHaveLength(list.find("li").length);
         expect(this.select.find("option").get(4).value).toEqual($(list.find("li").get(4)).find("button").text());
         expect(this.select.find("option").get(7).value).toEqual($(list.find("li").get(7)).find("button").text());
         return expect(this.select.find("option").get(5).value).not.toEqual($(list.find("li").get(7)).find("button").text());
       });
     });
   });
+  return describe("search", function() {});
 });

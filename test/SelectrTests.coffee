@@ -19,26 +19,21 @@ describe "Selectr", ->
     it "should contain default options", ->
       expect($.fn.selectr.defaultOptions).toBeDefined()
 
-  describe "data model", ->
-    it "should create a data model from the <select>", ->
-
-
   describe "UI setup", ->
 
     it "should hide the original input", ->
       expect(@select).toBeHidden()
 
     describe "wrapper", ->
-      beforeEach ->
-        @wrap = @select.siblings(".selectr-wrap")
-      afterEach ->
-        @wrap = null
+
+      beforeEach -> @wrap = @select.siblings ".selectr-wrap"
+      afterEach -> @wrap = null
 
       it "should be a sibling to the original select", ->
         expect(@wrap).toExist()
 
       it "should have the class \"selectr-wrap\"", ->
-        expect(@wrap).toHaveClass("selectr-wrap")
+        expect(@wrap).toHaveClass "selectr-wrap"
 
       it "should have a width based on settings", ->
         expect(@wrap.width()).toEqual($.fn.selectr.defaultOptions.width)
@@ -50,10 +45,14 @@ describe "Selectr", ->
         wrap = null
 
     describe "results", ->
-      it "should create a unordered list, within the wrapper, based on the <select>'s data", ->
+      it "should create a unordered list, within the wrapper, using the <select>'s data", ->
         list = @select.next(".selectr-wrap").find(".selectr-results")
         # matching indexes of the <option>s against the indexes of the <li>s that are generated.
+        expect(@select.find("option")).toHaveLength(list.find("li").length)
         expect(@select.find("option").get(4).value).toEqual($(list.find("li").get(4)).find("button").text())
         expect(@select.find("option").get(7).value).toEqual($(list.find("li").get(7)).find("button").text())
         expect(@select.find("option").get(5).value).not.toEqual($(list.find("li").get(7)).find("button").text())
+
+  describe "search", ->
+
 
