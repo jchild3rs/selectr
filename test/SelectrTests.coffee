@@ -56,6 +56,17 @@ describe "Selectr", ->
       it "should have a certain html layout if default", ->
         expect(@wrap.find("> .selectr-toggle, > .selectr-search, > .selectr-drop")).toExist()
 
+      it "should have a dropdown", ->
+        expect(@drop).toExist()
+
+      it "should have a dropdown that is hidden by default", ->
+        expect(@drop).toBeHidden()
+
+      it "should have a dropdown that should show when toggle is clicked", ->
+        toggle = @wrap.find(".selectr-toggle")
+        toggle.trigger "click"
+        expect(@drop).not.toBeHidden()
+
       it "should have the class `.selectr-open` when the toggle is clicked", ->
         toggle = @wrap.find(".selectr-toggle")
         expect(@wrap).not.toHaveClass "selectr-open"

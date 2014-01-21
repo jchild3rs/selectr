@@ -57,6 +57,18 @@ describe("Selectr", function() {
       it("should have a certain html layout if default", function() {
         return expect(this.wrap.find("> .selectr-toggle, > .selectr-search, > .selectr-drop")).toExist();
       });
+      it("should have a dropdown", function() {
+        return expect(this.drop).toExist();
+      });
+      it("should have a dropdown that is hidden by default", function() {
+        return expect(this.drop).toBeHidden();
+      });
+      it("should have a dropdown that should show when toggle is clicked", function() {
+        var toggle;
+        toggle = this.wrap.find(".selectr-toggle");
+        toggle.trigger("click");
+        return expect(this.drop).not.toBeHidden();
+      });
       return it("should have the class `.selectr-open` when the toggle is clicked", function() {
         var toggle;
         toggle = this.wrap.find(".selectr-toggle");
