@@ -20,6 +20,7 @@ $icon-spacing: 5px;
   padding: 0;
   position: relative;
   &.selectr-open {
+
     .selectr-toggle {
 
 
@@ -60,7 +61,7 @@ $icon-spacing: 5px;
     width: 100%;
     font-size: 12px;
     @include box-sizing(border-box);
-    &:hover {
+    &:hover, &.selectr-selected {
       background: dodgerblue;
       button {
         color: #fff;

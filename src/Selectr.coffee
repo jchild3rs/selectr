@@ -44,21 +44,47 @@
 
     searchKeyUp = (e, data, wrap) ->
       stroke = e.which || e.keyCode
-      query = e.currentTarget.value
-      resultContainer = wrap.find(".selectr-results")
-      if query.length > 0
-        resultData = searchDataModel(query, data)
-        if resultData.length > 0
-          newResultsList = createResultsListFromData(resultData)
-          resultContainer.replaceWith(newResultsList)
+      if isValidKeyCode(stroke)
+        query = e.currentTarget.value
+        resultContainer = wrap.find(".selectr-results")
+        if query.length > 0
+          resultData = searchDataModel(query, data)
+          if resultData.length > 0
+            newResultsList = createResultsListFromData(resultData)
+            resultContainer.replaceWith(newResultsList)
+          else
+            resultContainer.replaceWith("""
+            <ul class='selectr-results no-results'><li class='selectr-item'>No results found for <b>#{query}</b></li></ul>
+            """)
         else
-          resultContainer.replaceWith("""
-          <ul class='selectr-results no-results'><li class='selectr-item'>No results found for <b>#{query}</b></li></ul>
-          """)
-      else
-        # reset list
-        newResultsList = createResultsListFromData(data)
-        wrap.find(".selectr-results").replaceWith(newResultsList)
+          # reset list
+          newResultsList = createResultsListFromData(data)
+          wrap.find(".selectr-results").replaceWith(newResultsList)
+
+    searchKeyDown = (e, wrap) ->
+      stroke = e.which || e.keyCode
+      selected = wrap.find(".selectr-selected")
+
+      switch stroke
+        when 38 # up
+          if selected.length isnt 0 and selected.index() isnt 0
+            selected.removeClass("selectr-selected")
+            selected.prev(":visible").addClass("selectr-selected")
+          e.preventDefault()
+          break
+        when 40 # down
+          if selected.length is 0
+            wrap.find(".selectr-item:visible").first().addClass("selectr-selected")
+          else
+            selected.removeClass("selectr-selected")
+            selected.next(":visible").addClass("selectr-selected")
+          e.preventDefault()
+          break
+        when 13 # enter
+          if selected.length isnt 0
+            # todo "select" item on enter (make function for click to use)
+        else
+          break
 
     toggleClick = (drop, wrap, searchInput) ->
       if (!drop.is(":visible"))
@@ -82,6 +108,7 @@
         toggleClick(drop, wrap, searchInput);
         e.preventDefault();
       searchInput.keyup debounce 250, (e) -> searchKeyUp(e, data, wrap)
+      searchInput.keydown (e) -> searchKeyDown(e, wrap)
 
       return wrap
 
@@ -158,10 +185,13 @@
       validMath = (code >= 106 and code <= 111)
       # math = 106-111
       space = (code == 32)
+      # is not up or down arrow keys
+      isntUpOrDown = (code isnt 38 and code isnt 40)
+      isntEnterOrReturn = (code isnt 13)
       # space = 32
       backspaceOrDelete = (code is 8 or code is 46)
       # backspace/delete = 8, 46
-      return validAlpha or validNumber or validPunc or validMath or code is space or code is backspaceOrDelete
+      return isntUpOrDown and  isntEnterOrReturn and (validAlpha or validNumber or validPunc or validMath or space or backspaceOrDelete)
 
 
 

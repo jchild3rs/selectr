@@ -20,9 +20,11 @@ describe "Selectr", ->
 
   describe "options", ->
 
-    # todo: does this really mean anything?
     it "should contain default options", ->
       expect($.fn.selectr.defaultOptions).toBeDefined()
+
+    it "should have a default width of 250", ->
+      expect($.fn.selectr.defaultOptions.width).toBe(250)
 
   describe "UI setup", ->
 
@@ -83,3 +85,5 @@ describe "Selectr", ->
         expect(@select.find("option").get(7).value).toEqual($(list.find("li").get(7)).find("button").text())
         expect(@select.find("option").get(5).value).not.toEqual($(list.find("li").get(7)).find("button").text())
 
+  describe "search", ->
+    # todo: add search tests

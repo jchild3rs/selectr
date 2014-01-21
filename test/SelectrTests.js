@@ -19,11 +19,14 @@ describe("Selectr", function() {
     return expect(this.instance).toEqual(this.select);
   });
   describe("options", function() {
-    return it("should contain default options", function() {
+    it("should contain default options", function() {
       return expect($.fn.selectr.defaultOptions).toBeDefined();
     });
+    return it("should have a default width of 250", function() {
+      return expect($.fn.selectr.defaultOptions.width).toBe(250);
+    });
   });
-  return describe("UI setup", function() {
+  describe("UI setup", function() {
     it("should hide the original input", function() {
       return expect(this.select).toBeHidden();
     });
@@ -88,4 +91,5 @@ describe("Selectr", function() {
       });
     });
   });
+  return describe("search", function() {});
 });

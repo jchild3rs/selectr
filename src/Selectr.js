@@ -1,7 +1,7 @@
 (function($) {
   var Selectr;
   Selectr = (function() {
-    var bindEvents, createDataModel, createResultsListFromData, debounce, isValidKeyCode, resultClick, searchDataModel, searchKeyUp, setupUI, toggleClick;
+    var bindEvents, createDataModel, createResultsListFromData, debounce, isValidKeyCode, resultClick, searchDataModel, searchKeyDown, searchKeyUp, setupUI, toggleClick;
 
     function Selectr(select, opts) {
       this.select = select;
@@ -47,19 +47,47 @@
     searchKeyUp = function(e, data, wrap) {
       var newResultsList, query, resultContainer, resultData, stroke;
       stroke = e.which || e.keyCode;
-      query = e.currentTarget.value;
-      resultContainer = wrap.find(".selectr-results");
-      if (query.length > 0) {
-        resultData = searchDataModel(query, data);
-        if (resultData.length > 0) {
-          newResultsList = createResultsListFromData(resultData);
-          return resultContainer.replaceWith(newResultsList);
+      if (isValidKeyCode(stroke)) {
+        query = e.currentTarget.value;
+        resultContainer = wrap.find(".selectr-results");
+        if (query.length > 0) {
+          resultData = searchDataModel(query, data);
+          if (resultData.length > 0) {
+            newResultsList = createResultsListFromData(resultData);
+            return resultContainer.replaceWith(newResultsList);
+          } else {
+            return resultContainer.replaceWith("<ul class='selectr-results no-results'><li class='selectr-item'>No results found for <b>" + query + "</b></li></ul>");
+          }
         } else {
-          return resultContainer.replaceWith("<ul class='selectr-results no-results'><li class='selectr-item'>No results found for <b>" + query + "</b></li></ul>");
+          newResultsList = createResultsListFromData(data);
+          return wrap.find(".selectr-results").replaceWith(newResultsList);
         }
-      } else {
-        newResultsList = createResultsListFromData(data);
-        return wrap.find(".selectr-results").replaceWith(newResultsList);
+      }
+    };
+
+    searchKeyDown = function(e, wrap) {
+      var selected, stroke;
+      stroke = e.which || e.keyCode;
+      selected = wrap.find(".selectr-selected");
+      switch (stroke) {
+        case 38:
+          if (selected.length !== 0 && selected.index() !== 0) {
+            selected.removeClass("selectr-selected");
+            selected.prev(":visible").addClass("selectr-selected");
+          }
+          e.preventDefault();
+          break;
+        case 40:
+          if (selected.length === 0) {
+            wrap.find(".selectr-item:visible").first().addClass("selectr-selected");
+          } else {
+            selected.removeClass("selectr-selected");
+            selected.next(":visible").addClass("selectr-selected");
+          }
+          e.preventDefault();
+          break;
+        default:
+          break;
       }
     };
 
@@ -93,6 +121,9 @@
       searchInput.keyup(debounce(250, function(e) {
         return searchKeyUp(e, data, wrap);
       }));
+      searchInput.keydown(function(e) {
+        return searchKeyDown(e, wrap);
+      });
       return wrap;
     };
 
@@ -181,14 +212,16 @@
     };
 
     isValidKeyCode = function(code) {
-      var backspaceOrDelete, space, validAlpha, validMath, validNumber, validPunc;
+      var backspaceOrDelete, isntEnterOrReturn, isntUpOrDown, space, validAlpha, validMath, validNumber, validPunc;
       validAlpha = code >= 65 && code <= 90;
       validNumber = code >= 48 && code <= 57;
       validPunc = (code >= 185 && code <= 192) || (code >= 219 && code <= 222) && code !== 220;
       validMath = code >= 106 && code <= 111;
       space = code === 32;
+      isntUpOrDown = code !== 38 && code !== 40;
+      isntEnterOrReturn = code !== 13;
       backspaceOrDelete = code === 8 || code === 46;
-      return validAlpha || validNumber || validPunc || validMath || code === space || code === backspaceOrDelete;
+      return isntUpOrDown && isntEnterOrReturn && (validAlpha || validNumber || validPunc || validMath || space || backspaceOrDelete);
     };
 
     return Selectr;
