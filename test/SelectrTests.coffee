@@ -44,6 +44,9 @@ describe "Selectr", ->
         expect(wrap.width()).toEqual(500)
         wrap = null
 
+      it "should have a certain html layout if default", ->
+        expect(@wrap.find("> .selectr-toggle, > .selectr-search, > .selectr-drop")).toExist()
+
     describe "results", ->
       it "should create a unordered list, within the wrapper, using the <select>'s data", ->
         list = @select.next(".selectr-wrap").find(".selectr-results")

@@ -104,13 +104,19 @@ module.exports = function(grunt) {
         options: {              // Target options
           sassDir: 'src',
           cssDir: 'dist',
-          environment: 'production'
+          imagesDir: 'src/images',
+          imagesPath: 'src/images',
+          environment: 'production',
+          relativeAssets: true
         }
       },
       dev: {
         options: {
           sassDir: 'src',
-          cssDir: 'src'
+          cssDir: 'src',
+          imagesDir: 'src/images',
+          imagesPath: 'src/images',
+          relativeAssets: true
         }
       }
     }

@@ -38,7 +38,7 @@ describe("Selectr", function() {
       it("should have a width based on settings", function() {
         return expect(this.wrap.width()).toEqual($.fn.selectr.defaultOptions.width);
       });
-      return it("should have a width based on user-defined settings", function() {
+      it("should have a width based on user-defined settings", function() {
         var wrap;
         wrap = $("#select-fixture").selectr({
           width: 500
@@ -46,6 +46,9 @@ describe("Selectr", function() {
         expect(wrap.width()).not.toEqual($.fn.selectr.defaultOptions.width);
         expect(wrap.width()).toEqual(500);
         return wrap = null;
+      });
+      return it("should have a certain html layout if default", function() {
+        return expect(this.wrap.find("> .selectr-toggle, > .selectr-search, > .selectr-drop")).toExist();
       });
     });
     return describe("results", function() {
