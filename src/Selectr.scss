@@ -13,21 +13,18 @@ $icon-spacing: 5px;
   display: inline-block;
 }
 
-
 .selectr-wrap {
   width: 100%;
   margin: 0;
   padding: 0;
   position: relative;
   &.selectr-open {
-
     .selectr-toggle {
-
-
       cursor: default;
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
       border-bottom: 0;
+      @include box-shadow(0 4px 5px $shadow-color);
       @include background-image(linear-gradient(#eee 20%, $background-color 80%));
       span {
         border-top: 1px solid $background-color;
@@ -36,7 +33,6 @@ $icon-spacing: 5px;
     }
   }
 }
-
 .selectr-results {
   width: 100%;
   @include box-sizing(border-box);
@@ -61,7 +57,7 @@ $icon-spacing: 5px;
     width: 100%;
     font-size: 12px;
     @include box-sizing(border-box);
-    &:hover, &.selectr-selected {
+    &.selectr-selected {
       background: dodgerblue;
       button {
         color: #fff;
@@ -86,11 +82,10 @@ $icon-spacing: 5px;
     }
   }
 }
-
 .selectr-drop {
   position: absolute;
   @include box-sizing(border-box);
-  @include box-shadow(0 3px 5px $shadow-color);
+  @include box-shadow(0 4px 5px $shadow-color);
   width: 100%;
   padding: $base-spacing-unit;
   display: none;
@@ -111,9 +106,9 @@ $icon-spacing: 5px;
   border-radius: 3px;
   padding: $base-spacing-unit;
   @include box-sizing(border-box);
-//  &:focus {
-//    outline: none;
-//  }
+  &:focus {
+    outline: none;
+  }
 }
 .selectr-toggle {
   @include background-image(linear-gradient($background-color 20%, #eee 80%));
@@ -157,7 +152,6 @@ $icon-spacing: 5px;
 
   }
 }
-
 .selectr-selections {
   margin: 0;
   padding: 0;

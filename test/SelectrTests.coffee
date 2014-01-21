@@ -87,3 +87,5 @@ describe "Selectr", ->
 
   describe "search", ->
     # todo: add search tests
+
+    # todo add arrow key tests

@@ -42,6 +42,17 @@
       # hide original input and append new wrapper
       select.hide().after(wrap)
 
+    showDrop = (wrap) ->
+      wrap.addClass "selectr-open"
+      wrap.find(".selectr-selected").removeClass("selectr-selected")
+      drop = wrap.find(".selectr-drop")
+      drop.show()
+
+    hideDrop = (wrap) ->
+      wrap.removeClass "selectr-open"
+      drop = wrap.find(".selectr-drop")
+      drop.hide()
+
     searchKeyUp = (e, data, wrap) ->
       stroke = e.which || e.keyCode
       if isValidKeyCode(stroke)
@@ -64,36 +75,55 @@
     searchKeyDown = (e, wrap) ->
       stroke = e.which || e.keyCode
       selected = wrap.find(".selectr-selected")
+      hasSelection = selected.length isnt 0
+      drop = wrap.find(".selectr-drop")
+      resultList = wrap.find(".selectr-results")
 
       switch stroke
         when 38 # up
-          if selected.length isnt 0 and selected.index() isnt 0
+          if hasSelection and selected.index() isnt 0
             selected.removeClass("selectr-selected")
             selected.prev(":visible").addClass("selectr-selected")
+            currentScrollTop = resultList.scrollTop() + resultList.height()
+            selectedHeight = ((selected.index() - 1) * selected.height())
+            offset = currentScrollTop - (resultList.height() - selected.height())
+            if offset > selectedHeight
+              resultList.scrollTop(resultList.scrollTop() + selectedHeight - offset)
           e.preventDefault()
           break
         when 40 # down
-          if selected.length is 0
+          if not hasSelection
             wrap.find(".selectr-item:visible").first().addClass("selectr-selected")
           else
-            selected.removeClass("selectr-selected")
-            selected.next(":visible").addClass("selectr-selected")
+            if selected.next().length is 0
+              break
+            else
+              selected.removeClass("selectr-selected")
+              selected.next(":visible").addClass("selectr-selected")
+              currentScrollTop = resultList.scrollTop() + resultList.height()
+              selectedHeight = (selected.index()+1) * selected.height()
+              if selectedHeight > currentScrollTop
+                offset = selectedHeight - currentScrollTop
+                resultList.scrollTop(resultList.scrollTop() + offset)
+
           e.preventDefault()
           break
         when 13 # enter
-          if selected.length isnt 0
+          if hasSelection
             # todo "select" item on enter (make function for click to use)
+            selected.removeClass("selectr-selected")
+            hideDrop(wrap)
+            break
+
         else
           break
 
     toggleClick = (drop, wrap, searchInput) ->
       if (!drop.is(":visible"))
-        drop.show()
-        wrap.addClass "selectr-open"
+        showDrop(wrap)
         searchInput.focus()
       else
-        drop.hide()
-        wrap.removeClass "selectr-open"
+        hideDrop(wrap)
     resultClick = ->
 
     bindEvents = (select, wrap) ->
@@ -104,6 +134,9 @@
       data = createDataModel resultsList
 
       drop.delegate ".selectr-results button", "click", -> resultClick()
+      drop.delegate ".selectr-item", "mouseover", (e) ->
+        wrap.find(".selectr-selected").removeClass("selectr-selected")
+        $(e.currentTarget).addClass("selectr-selected")
       toggleBtn.click (e) ->
         toggleClick(drop, wrap, searchInput);
         e.preventDefault();
