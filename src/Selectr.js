@@ -49,7 +49,6 @@
       stroke = e.which || e.keyCode;
       query = e.currentTarget.value;
       resultContainer = wrap.find(".selectr-results");
-      console.log(stroke, query);
       if (query.length > 0) {
         resultData = searchDataModel(query, data);
         if (resultData.length > 0) {
@@ -77,7 +76,7 @@
 
     resultClick = function() {};
 
-    bindEvents = function(select, wrap, events) {
+    bindEvents = function(select, wrap) {
       var data, drop, resultsList, searchInput, toggleBtn;
       toggleBtn = wrap.find(".selectr-toggle");
       drop = wrap.find(".selectr-drop");
@@ -88,7 +87,8 @@
         return resultClick();
       });
       toggleBtn.click(function(e) {
-        return toggleClick(drop, wrap, searchInput);
+        toggleClick(drop, wrap, searchInput);
+        return e.preventDefault();
       });
       searchInput.keyup(debounce(250, function(e) {
         return searchKeyUp(e, data, wrap);

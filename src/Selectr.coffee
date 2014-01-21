@@ -46,7 +46,6 @@
       stroke = e.which || e.keyCode
       query = e.currentTarget.value
       resultContainer = wrap.find(".selectr-results")
-      console.log stroke, query
       if query.length > 0
         resultData = searchDataModel(query, data)
         if resultData.length > 0
@@ -71,7 +70,7 @@
         wrap.removeClass "selectr-open"
     resultClick = ->
 
-    bindEvents = (select, wrap, events) ->
+    bindEvents = (select, wrap) ->
       toggleBtn = wrap.find ".selectr-toggle"
       drop = wrap.find ".selectr-drop"
       searchInput = wrap.find ".selectr-search"
@@ -79,7 +78,9 @@
       data = createDataModel resultsList
 
       drop.delegate ".selectr-results button", "click", -> resultClick()
-      toggleBtn.click (e) -> toggleClick(drop, wrap, searchInput)
+      toggleBtn.click (e) ->
+        toggleClick(drop, wrap, searchInput);
+        e.preventDefault();
       searchInput.keyup debounce 250, (e) -> searchKeyUp(e, data, wrap)
 
       return wrap
