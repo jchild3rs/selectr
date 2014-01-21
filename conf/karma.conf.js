@@ -17,8 +17,11 @@ module.exports = function(config) {
       '../lib/jquery-1.9.0.js',
 //      '../lib/jasmine.js',
       '../lib/jasmine-jquery.js',
-      '../src/*.js',
 
+      // js, css, images
+      '../src/**/*.js',
+      '../src/**/*.css',
+      {pattern: '../src/images/**/*', watched: false, served: true, included: false},
       // fixtures
       {pattern: '../test/fixtures/*.html', watched: true, served: true, included: false},
       {pattern: '../test/fixtures/*.json', watched: true, served: true, included: false},

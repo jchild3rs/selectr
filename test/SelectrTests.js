@@ -1,3 +1,7 @@
+jasmine.getStyleFixtures().fixturesPath = '/absolute/Users/james/Projects/selectr/src/';
+
+loadStyleFixtures('Selectr.css');
+
 describe("Selectr", function() {
   beforeEach(function() {
     var select;
@@ -23,12 +27,14 @@ describe("Selectr", function() {
     it("should hide the original input", function() {
       return expect(this.select).toBeHidden();
     });
-    describe("wrapper", function() {
+    describe("wrapper & dropdown", function() {
       beforeEach(function() {
-        return this.wrap = this.select.siblings(".selectr-wrap");
+        this.wrap = this.select.siblings(".selectr-wrap");
+        return this.drop = this.wrap.find(".selectr-drop");
       });
       afterEach(function() {
-        return this.wrap = null;
+        this.wrap = null;
+        return this.drop = null;
       });
       it("should be a sibling to the original select", function() {
         return expect(this.wrap).toExist();
@@ -54,6 +60,7 @@ describe("Selectr", function() {
       return it("should have the class `.selectr-open` when the toggle is clicked", function() {
         var toggle;
         toggle = this.wrap.find(".selectr-toggle");
+        expect(this.wrap).not.toHaveClass("selectr-open");
         toggle.trigger("click");
         return expect(this.wrap).toHaveClass("selectr-open");
       });

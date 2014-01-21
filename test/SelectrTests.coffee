@@ -1,3 +1,7 @@
+jasmine.getStyleFixtures().fixturesPath = '/absolute/Users/james/Projects/selectr/src/'
+
+loadStyleFixtures('Selectr.css')
+
 describe "Selectr", ->
 
   beforeEach ->
@@ -25,10 +29,14 @@ describe "Selectr", ->
     it "should hide the original input", ->
       expect(@select).toBeHidden()
 
-    describe "wrapper", ->
+    describe "wrapper & dropdown", ->
 
-      beforeEach -> @wrap = @select.siblings ".selectr-wrap"
-      afterEach -> @wrap = null
+      beforeEach ->
+        @wrap = @select.siblings ".selectr-wrap"
+        @drop = @wrap.find(".selectr-drop")
+      afterEach ->
+        @wrap = null
+        @drop = null
 
       it "should be a sibling to the original select", ->
         expect(@wrap).toExist()
@@ -50,9 +58,9 @@ describe "Selectr", ->
 
       it "should have the class `.selectr-open` when the toggle is clicked", ->
         toggle = @wrap.find(".selectr-toggle")
+        expect(@wrap).not.toHaveClass "selectr-open"
         toggle.trigger "click"
         expect(@wrap).toHaveClass "selectr-open"
-
 
 
     describe "results", ->
