@@ -130,7 +130,7 @@ $icon-spacing: 5px;
   span {
     border-top: 1px solid $background-color;
     border-bottom: 1px solid #eee;
-    @include border-radius(1px);
+    @include border-radius(3px);
     padding: 5px 6px 3px;
     display: block;
     font: {

@@ -11,7 +11,7 @@
 
     setupUI = (select, options) ->
       placeholder = determinePlaceholderText(select)
-      wrap = $("<div/>", {class: "selectr-wrap"}).css({width: options.width})
+      wrap = $("<div/>", {class: "selectr-wrap"}).css width: options.width, maxHeight: options.height
       toggleBtn = $("<a />", {class: "selectr-toggle"}).append("<span>#{placeholder}</span><div><i></i></div>");
       searchInput = $ "<input />", {class: "selectr-search", type: "text", autocomplete: "off"}
       dropdownWrap = $("<div />", {class: "selectr-drop"})
@@ -49,7 +49,13 @@
       else
         "Select an option"
 
+    handleDOMClick = (e) ->
+      if not $(e.target).parents('.selectr-wrap').length
+        hideDrop($(".selectr-wrap.selectr-open"))
+
     showDrop = (wrap) ->
+
+      $(document).click handleDOMClick
 
       # hide/reset all open dropdowns
       $(".selectr-drop").hide()
@@ -63,6 +69,7 @@
       drop.show()
 
     hideDrop = (wrap) ->
+      $(document).unbind "click", handleDOMClick
       wrap.removeClass "selectr-open"
       drop = wrap.find(".selectr-drop")
       drop.css "z-index", "" # reset z-index
@@ -210,10 +217,6 @@
         makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple)
         hideDrop(wrap)
 
-#      $(document).on "click", ->
-#        if drop.is(":visible")
-#          hideDrop(wrap)
-
       if options.multiple
         searchInput.focus ->
           showDrop(wrap)
@@ -359,6 +362,7 @@
 
   $.fn.selectr.defaultOptions =
     width: 250
+    height: 300
     onResultSelect: ->
 
 

@@ -1,7 +1,7 @@
 (function($) {
   var Selectr;
   Selectr = (function() {
-    var addMultiSelection, bindEvents, createDataModel, createResultsListFromData, debounce, determinePlaceholderText, hideDrop, isValidKeyCode, makeSelection, removeMultiSelection, resetResults, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
+    var addMultiSelection, bindEvents, createDataModel, createResultsListFromData, debounce, determinePlaceholderText, handleDOMClick, hideDrop, isValidKeyCode, makeSelection, removeMultiSelection, resetResults, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
 
     function Selectr(select, opts) {
       this.select = select;
@@ -18,7 +18,8 @@
       wrap = $("<div/>", {
         "class": "selectr-wrap"
       }).css({
-        width: options.width
+        width: options.width,
+        maxHeight: options.height
       });
       toggleBtn = $("<a />", {
         "class": "selectr-toggle"
@@ -57,8 +58,15 @@
       }
     };
 
+    handleDOMClick = function(e) {
+      if (!$(e.target).parents('.selectr-wrap').length) {
+        return hideDrop($(".selectr-wrap.selectr-open"));
+      }
+    };
+
     showDrop = function(wrap) {
       var drop;
+      $(document).click(handleDOMClick);
       $(".selectr-drop").hide();
       $(".selectr-open").removeClass("selectr-open");
       wrap.show();
@@ -71,6 +79,7 @@
 
     hideDrop = function(wrap) {
       var drop;
+      $(document).unbind("click", handleDOMClick);
       wrap.removeClass("selectr-open");
       drop = wrap.find(".selectr-drop");
       drop.css("z-index", "");
@@ -402,6 +411,7 @@
   };
   return $.fn.selectr.defaultOptions = {
     width: 250,
+    height: 300,
     onResultSelect: function() {}
   };
 })(jQuery);

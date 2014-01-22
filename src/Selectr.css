@@ -173,11 +173,11 @@
 .selectr-toggle span, .selectr-selections ul span {
   border-top: 1px solid #fdfdfd;
   border-bottom: 1px solid #eee;
-  -webkit-border-radius: 1px;
-  -moz-border-radius: 1px;
-  -ms-border-radius: 1px;
-  -o-border-radius: 1px;
-  border-radius: 1px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  -ms-border-radius: 3px;
+  -o-border-radius: 3px;
+  border-radius: 3px;
   padding: 5px 6px 3px;
   display: block;
   font-size: 12px;
