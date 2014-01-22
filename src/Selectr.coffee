@@ -111,12 +111,18 @@
         when 13 # enter
           if hasSelection
             # todo "select" item on enter (make function for click to use)
+
             selected.removeClass("selectr-selected")
-            hideDrop(wrap)
+            makeSelection(selected, wrap)
             break
 
         else
           break
+
+    makeSelection = (selectedItem, wrap) ->
+      wrap.find(".selectr-toggle span").text selectedItem.text()
+      hideDrop(wrap)
+      wrap.prev("select").val(selectedItem.find("button").data("value"))
 
     toggleClick = (drop, wrap, searchInput) ->
       if (!drop.is(":visible"))
@@ -124,7 +130,8 @@
         searchInput.focus()
       else
         hideDrop(wrap)
-    resultClick = ->
+
+    resultClick = (e) -> makeSelection($(e.currentTarget).parent(), $(e.currentTarget).parents(".selectr-wrap"))
 
     bindEvents = (select, wrap) ->
       toggleBtn = wrap.find ".selectr-toggle"
@@ -133,7 +140,7 @@
       resultsList = wrap.find ".selectr-results"
       data = createDataModel resultsList
 
-      drop.delegate ".selectr-results button", "click", -> resultClick()
+      drop.delegate ".selectr-results button", "click", resultClick
       drop.delegate ".selectr-item", "mouseover", (e) ->
         wrap.find(".selectr-selected").removeClass("selectr-selected")
         $(e.currentTarget).addClass("selectr-selected")

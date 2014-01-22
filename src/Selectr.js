@@ -1,7 +1,7 @@
 (function($) {
   var Selectr;
   Selectr = (function() {
-    var bindEvents, createDataModel, createResultsListFromData, debounce, hideDrop, isValidKeyCode, resultClick, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
+    var bindEvents, createDataModel, createResultsListFromData, debounce, hideDrop, isValidKeyCode, makeSelection, resultClick, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
 
     function Selectr(select, opts) {
       this.select = select;
@@ -123,13 +123,19 @@
         case 13:
           if (hasSelection) {
             selected.removeClass("selectr-selected");
-            hideDrop(wrap);
+            makeSelection(selected, wrap);
             break;
           }
           break;
         default:
           break;
       }
+    };
+
+    makeSelection = function(selectedItem, wrap) {
+      wrap.find(".selectr-toggle span").text(selectedItem.text());
+      hideDrop(wrap);
+      return wrap.prev("select").val(selectedItem.find("button").data("value"));
     };
 
     toggleClick = function(drop, wrap, searchInput) {
@@ -141,7 +147,9 @@
       }
     };
 
-    resultClick = function() {};
+    resultClick = function(e) {
+      return makeSelection($(e.currentTarget).parent(), $(e.currentTarget).parents(".selectr-wrap"));
+    };
 
     bindEvents = function(select, wrap) {
       var data, drop, resultsList, searchInput, toggleBtn;
@@ -150,9 +158,7 @@
       searchInput = wrap.find(".selectr-search");
       resultsList = wrap.find(".selectr-results");
       data = createDataModel(resultsList);
-      drop.delegate(".selectr-results button", "click", function() {
-        return resultClick();
-      });
+      drop.delegate(".selectr-results button", "click", resultClick);
       drop.delegate(".selectr-item", "mouseover", function(e) {
         wrap.find(".selectr-selected").removeClass("selectr-selected");
         return $(e.currentTarget).addClass("selectr-selected");

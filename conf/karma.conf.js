@@ -5,7 +5,7 @@ module.exports = function(config) {
   config.set({
 
     // base path, that will be used to resolve files and exclude
-    basePath: '',
+    basePath: '../',
 
 
     // frameworks to use
@@ -14,19 +14,19 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      '../lib/jquery-1.9.0.js',
+      'lib/jquery-1.9.0.js',
 //      '../lib/jasmine.js',
-      '../lib/jasmine-jquery.js',
+      'lib/jasmine-jquery.js',
 
       // js, css, images
-      '../src/**/*.js',
-      '../src/**/*.css',
-      {pattern: '../src/images/**/*', watched: false, served: true, included: false},
+      'src/**/*.js',
+      'src/**/*.css',
+      {pattern: 'src/images/**/*', watched: false, served: true, included: false},
       // fixtures
-      {pattern: '../test/fixtures/*.html', watched: true, served: true, included: false},
-      {pattern: '../test/fixtures/*.json', watched: true, served: true, included: false},
-
-      '../test/*.js'
+//      {pattern: 'test/fixtures/*.html', watched: false, served: true, included: false},
+//      {pattern: 'test/fixtures/*.json', watched: false, served: true, included: false},
+      'test/fixtures/**/*',
+      'test/*.js'
     ],
 
 
