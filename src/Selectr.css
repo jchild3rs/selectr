@@ -210,13 +210,30 @@
 .selectr-selections ul, .selectr-selections li {
   margin: 0;
   padding: 0;
+  list-style: none;
 }
-/* line 171, Selectr.scss */
-.selectr-selections .selectr-ms-input {
+/* line 169, Selectr.scss */
+.selectr-selections ul {
+  *zoom: 1;
   background: transparent;
-  border: 0;
+}
+/* line 38, ../../../../../Library/Ruby/Gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/utilities/general/_clearfix.scss */
+.selectr-selections ul:after {
+  content: "";
+  display: table;
+  clear: both;
 }
 /* line 174, Selectr.scss */
-.selectr-selections .selectr-ms-input:focus {
+.selectr-selections .selectr-ms-search {
+  background: transparent;
+  border: 0;
+  padding: 6px 8px;
+}
+/* line 178, Selectr.scss */
+.selectr-selections .selectr-ms-search:focus {
   outline: none;
+}
+/* line 182, Selectr.scss */
+.selectr-selections .selectr-search-wrap, .selectr-selections .selectr-pill {
+  float: left;
 }

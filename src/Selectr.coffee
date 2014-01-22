@@ -1,7 +1,5 @@
 (($) ->
 
-  # todo: handle optgroup
-
   class Selectr
 
     constructor: (@select, opts) ->
@@ -20,8 +18,8 @@
       multiSelectWrap = $("""
         <div class="selectr-selections"> 
           <ul>
-            <li>
-              <input type="text" class="selectr-ms-input" placeholder="#{placeholder}" />
+            <li class="selectr-search-wrap">
+              <input type="text" class="selectr-ms-search selectr-search" data-placeholder="#{placeholder}" placeholder="#{placeholder}" autocomplete='off' />
             </li>
           </ul>
         </div>
@@ -36,7 +34,7 @@
         dropdownWrap.append searchInput, resultsList
         wrap.append toggleBtn, dropdownWrap
 
-      wrap = bindEvents(select, wrap)
+      wrap = bindEvents(select, wrap, options)
 
       # hide original input and append new wrapper
       select.hide().after(wrap)
@@ -52,23 +50,34 @@
         "Select an option"
 
     showDrop = (wrap) ->
+
+      # hide/reset all open dropdowns
+      $(".selectr-drop").hide()
+      $(".selectr-open").removeClass("selectr-open")
+
+      wrap.show()
       wrap.addClass "selectr-open"
       wrap.find(".selectr-selected").removeClass("selectr-selected")
       drop = wrap.find(".selectr-drop")
+      drop.css "z-index", 99999
       drop.show()
 
     hideDrop = (wrap) ->
       wrap.removeClass "selectr-open"
       drop = wrap.find(".selectr-drop")
+      drop.css "z-index", "" # reset z-index
       drop.hide()
 
-    searchKeyUp = (e, data, wrap) ->
+    searchKeyUp = (e, wrap) ->
+      # todo: make sure search works w/ optgroup
       stroke = e.which || e.keyCode
+      data = createDataModel wrap.prev("select")
       if isValidKeyCode(stroke)
         query = e.currentTarget.value
         resultContainer = wrap.find(".selectr-results")
         if query.length > 0
           resultData = searchDataModel(query, data)
+          # create HTML
           if resultData.length > 0
             newResultsList = createResultsListFromData(resultData)
             resultContainer.replaceWith(newResultsList)
@@ -76,12 +85,20 @@
             resultContainer.replaceWith("""
             <ul class='selectr-results no-results'><li class='selectr-item'>No results found for <b>#{query}</b></li></ul>
             """)
+
+          # right now all optgroup labels are added to the data model.
+          # this CSS will hide all labels that dont have a .selectr-item sibling.
+          # hacky, but works for now.
+          wrap.find(".selectr-label").hide()
+          wrap.find(".selectr-label ~ .selectr-item:visible").prev().show()
+
+          # show results if not aleady visible
+          showDrop(wrap) if not wrap.find(".selectr-drop").is(":visible")
         else
           # reset list
-          newResultsList = createResultsListFromData(data)
-          wrap.find(".selectr-results").replaceWith(newResultsList)
+          resetResults(wrap)
 
-    searchKeyDown = (e, wrap) ->
+    searchKeyDown = (e, wrap, multiple) ->
       stroke = e.which || e.keyCode
       selected = wrap.find(".selectr-selected")
       hasSelection = selected.length isnt 0
@@ -109,73 +126,114 @@
             if next.length is 0
               break
             else
-              dunno = if wrap.prev().find("optgroup").length > 0 then 2 else 1
+              gutter = if multiple then 2 else 1
               selected.removeClass("selectr-selected")
               next.addClass("selectr-selected")
               currentScrollTop = resultList.scrollTop() + resultList.height()
-              selectedHeight = (selected.index() + dunno) * selected.height()
+              selectedHeight = (selected.index() + gutter) * selected.height()
               offset = selectedHeight - currentScrollTop
-
-              console.log "scroll top", currentScrollTop
-              console.log "selection height", selectedHeight
-              console.log "results height", resultList.height(), resultList.outerHeight()
-#              if selectedHeight > currentScrollTop
-              resultList.scrollTop(resultList.scrollTop() + offset)
-#                offset = selectedHeight - currentScrollTop
-#                resultList.scrollTop(resultList.scrollTop() + offset)
+#              console.log "scroll top", currentScrollTop
+#              console.log "selection height", selectedHeight
+#              console.log "results height", resultList.height(), resultList.outerHeight()
+              if selectedHeight > currentScrollTop
+                resultList.scrollTop(resultList.scrollTop() + offset)
 
           e.preventDefault()
           break
         when 13 # enter
           if hasSelection
-            # todo "select" item on enter (make function for click to use)
-
             selected.removeClass("selectr-selected")
-            makeSelection(selected, wrap)
+            wrap.find(".selectr-search").val("")
+            makeSelection(selected, wrap, multiple)
+            # reset results list
+            resetResults(wrap)
             break
-
         else
           break
 
-    makeSelection = (selectedItem, wrap) ->
-      wrap.find(".selectr-toggle span").text selectedItem.text()
-      hideDrop(wrap)
+    resetResults = (wrap) ->
+      data = createDataModel wrap.prev("select")
+      newResultsList = createResultsListFromData(data)
+      wrap.find(".selectr-results").replaceWith(newResultsList)
+
+    makeSelection = (selectedItem, wrap, multiple) ->
+      if not multiple
+        wrap.find(".selectr-toggle span").text selectedItem.text()
+#        hideDrop(wrap)
+      else
+        addMultiSelection(selectedItem, wrap)
       wrap.prev("select").val(selectedItem.find("button").data("value"))
 
+    addMultiSelection = (selectedItem, wrap) ->
+      selectionList = wrap.find(".selectr-selections ul")
+      item = $("""<li class="selectr-pill">
+        <button data-value="#{selectedItem.data('value')}" data-selected="#{selectedItem.data('selected')}">
+          #{selectedItem.text()}
+        </button>
+      </li>""")
+      selectionList.prepend item
+
+    removeMultiSelection = (selectedItem) ->
+      item = $(selectedItem).parent()
+      item.fadeOut -> item.remove()
+
     toggleClick = (drop, wrap, searchInput) ->
-      if (!drop.is(":visible"))
+      if not drop.is(":visible")
         showDrop(wrap)
         searchInput.focus()
       else
         hideDrop(wrap)
 
-    resultClick = (e) -> makeSelection($(e.currentTarget).parent(), $(e.currentTarget).parents(".selectr-wrap"))
-
-    bindEvents = (select, wrap) ->
+#    resultClick = (selected, wrap, multiple) -> makeSelection(selected, wrap, multiple)
+    bindEvents = (select, wrap, options) ->
+#      'selectr-ms-search'
       toggleBtn = wrap.find ".selectr-toggle"
       drop = wrap.find ".selectr-drop"
       searchInput = wrap.find ".selectr-search"
-      resultsList = wrap.find ".selectr-results"
-      data = createDataModel resultsList
+      multiSelectWrap = wrap.find ".selectr-selections"
+      multiSelectSearch = multiSelectWrap.find ".selectr-search"
 
-      drop.delegate ".selectr-results button", "click", resultClick
-      drop.delegate ".selectr-item", "mouseover", (e) ->
+      multiSelectSearch.on "focus", ->
+        multiSelectSearch.attr("placeholder", "")
+        multiSelectSearch.width(30)
+      multiSelectSearch.on "blur", ->
+        multiSelectSearch.attr("placeholder", multiSelectSearch.data("placeholder"))
+        multiSelectSearch.width(options.width - 20)
+      multiSelectWrap.on "click", ".selectr-pill button", (e) ->
+        removeMultiSelection($(e.currentTarget))
+
+      drop.on "mouseover", ".selectr-item", (e) ->
         wrap.find(".selectr-selected").removeClass("selectr-selected")
         $(e.currentTarget).addClass("selectr-selected")
-      toggleBtn.click (e) ->
-        toggleClick(drop, wrap, searchInput);
-        e.preventDefault();
-      searchInput.keyup debounce 250, (e) -> searchKeyUp(e, data, wrap)
-      searchInput.keydown (e) -> searchKeyDown(e, wrap)
+
+      drop.on "click", ".selectr-item button", (e) ->
+        makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple)
+        hideDrop(wrap)
+
+#      $(document).on "click", ->
+#        if drop.is(":visible")
+#          hideDrop(wrap)
+
+      if options.multiple
+        searchInput.focus ->
+          showDrop(wrap)
+      else
+        toggleBtn.click (e) ->
+          toggleClick(drop, wrap, searchInput)
+          e.preventDefault();
+
+      searchInput.keyup debounce 250, (e) -> searchKeyUp(e, wrap)
+      searchInput.keydown (e) -> searchKeyDown(e, wrap, options.multiple)
 
       return wrap
 
     createDataModel = (el) ->
       optgroups = $(el).find("optgroup")
+      options = $(el).find("option")
       if optgroups.length > 0
         data = []
         optgroups.each (i, og) ->
-          group = label: $(og).attr("label"), options: []
+          data.push label: $(og).attr("label")
           options = $(og).find("option")
           options.each (i, option) ->
             alreadyExists = false
@@ -184,16 +242,16 @@
                 if storedItem.value is $(option).val()
                   alreadyExists = true
                 return
-            if !alreadyExists
-              group.options.push
+            if not alreadyExists
+              data.push
+
                 text: $(option).text()
                 value: $(option).val()
                 selected: $(option).is(":selected")
             return
-          data.push group
+#          data.push group
           return
-      else
-        options = $(el).find("option")
+      else if options.length > 0
         data = []
         options.each (i, option) ->
           alreadyExists = false
@@ -202,7 +260,7 @@
               if storedItem.value is $(option).val()
                 alreadyExists = true
               return
-          if !alreadyExists
+          if not alreadyExists
             data.push
               text: $(option).text()
               value: $(option).val()
@@ -213,24 +271,26 @@
     searchDataModel = (query, model) ->
       matches = []
       $(model).each (i, item) ->
-        match = item.text.match(new RegExp(query, "ig"))
-        if match?
-          match = if match.length is 1 then match[0] else match
-          matches.push({
-            text: item.text.replace(match, "<b>" + match + "</b>"),
-            value: item.value,
-            selected: item.selected
-          })
-        return
+        if item.text?
+          match = item.text.match(new RegExp(query, "ig"))
+          
+          if match?
+            match = if match.length is 1 then match[0] else match
+            matches.push
+              text: item.text.replace(match, "<b>" + match + "</b>")
+              value: item.value
+              selected: item.selected
+
+          return
+        if item.label
+          matches.push(label: item.label)
+#        console.log matches
+#        else if item.label?
+#
+#          $(item).each (i, item) ->
+#            matches = matches.concat(searchDataModel(query, item.options))
+
       return matches
-
-    createOptGroupListFromData = (optgroups) ->
-      list = $("<ul class=\"selectr-results\"></ul>")
-      liHtml = ""
-
-      list.append liHtml
-      return list
-
 
     createResultsListFromData = (data) ->
       list = $("<ul class=\"selectr-results\"></ul>")

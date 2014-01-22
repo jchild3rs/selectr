@@ -1,7 +1,7 @@
 (function($) {
   var Selectr;
   Selectr = (function() {
-    var bindEvents, createDataModel, createOptGroupListFromData, createResultsListFromData, debounce, determinePlaceholderText, hideDrop, isValidKeyCode, makeSelection, resultClick, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
+    var addMultiSelection, bindEvents, createDataModel, createResultsListFromData, debounce, determinePlaceholderText, hideDrop, isValidKeyCode, makeSelection, removeMultiSelection, resetResults, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
 
     function Selectr(select, opts) {
       this.select = select;
@@ -31,7 +31,7 @@
       dropdownWrap = $("<div />", {
         "class": "selectr-drop"
       });
-      multiSelectWrap = $("<div class=\"selectr-selections\"> \n  <ul>\n    <li>\n      <input type=\"text\" class=\"selectr-ms-input\" placeholder=\"" + placeholder + "\" />\n    </li>\n  </ul>\n</div>");
+      multiSelectWrap = $("<div class=\"selectr-selections\"> \n  <ul>\n    <li class=\"selectr-search-wrap\">\n      <input type=\"text\" class=\"selectr-ms-search selectr-search\" data-placeholder=\"" + placeholder + "\" placeholder=\"" + placeholder + "\" autocomplete='off' />\n    </li>\n  </ul>\n</div>");
       data = createDataModel(select);
       resultsList = createResultsListFromData(data);
       if (options.multiple) {
@@ -41,7 +41,7 @@
         dropdownWrap.append(searchInput, resultsList);
         wrap.append(toggleBtn, dropdownWrap);
       }
-      wrap = bindEvents(select, wrap);
+      wrap = bindEvents(select, wrap, options);
       return select.hide().after(wrap);
     };
 
@@ -59,9 +59,13 @@
 
     showDrop = function(wrap) {
       var drop;
+      $(".selectr-drop").hide();
+      $(".selectr-open").removeClass("selectr-open");
+      wrap.show();
       wrap.addClass("selectr-open");
       wrap.find(".selectr-selected").removeClass("selectr-selected");
       drop = wrap.find(".selectr-drop");
+      drop.css("z-index", 99999);
       return drop.show();
     };
 
@@ -69,12 +73,14 @@
       var drop;
       wrap.removeClass("selectr-open");
       drop = wrap.find(".selectr-drop");
+      drop.css("z-index", "");
       return drop.hide();
     };
 
-    searchKeyUp = function(e, data, wrap) {
-      var newResultsList, query, resultContainer, resultData, stroke;
+    searchKeyUp = function(e, wrap) {
+      var data, newResultsList, query, resultContainer, resultData, stroke;
       stroke = e.which || e.keyCode;
+      data = createDataModel(wrap.prev("select"));
       if (isValidKeyCode(stroke)) {
         query = e.currentTarget.value;
         resultContainer = wrap.find(".selectr-results");
@@ -82,19 +88,23 @@
           resultData = searchDataModel(query, data);
           if (resultData.length > 0) {
             newResultsList = createResultsListFromData(resultData);
-            return resultContainer.replaceWith(newResultsList);
+            resultContainer.replaceWith(newResultsList);
           } else {
-            return resultContainer.replaceWith("<ul class='selectr-results no-results'><li class='selectr-item'>No results found for <b>" + query + "</b></li></ul>");
+            resultContainer.replaceWith("<ul class='selectr-results no-results'><li class='selectr-item'>No results found for <b>" + query + "</b></li></ul>");
+          }
+          wrap.find(".selectr-label").hide();
+          wrap.find(".selectr-label ~ .selectr-item:visible").prev().show();
+          if (!wrap.find(".selectr-drop").is(":visible")) {
+            return showDrop(wrap);
           }
         } else {
-          newResultsList = createResultsListFromData(data);
-          return wrap.find(".selectr-results").replaceWith(newResultsList);
+          return resetResults(wrap);
         }
       }
     };
 
-    searchKeyDown = function(e, wrap) {
-      var currentScrollTop, drop, dunno, hasSelection, next, offset, prev, resultList, selected, selectedHeight, stroke;
+    searchKeyDown = function(e, wrap, multiple) {
+      var currentScrollTop, drop, gutter, hasSelection, next, offset, prev, resultList, selected, selectedHeight, stroke;
       stroke = e.which || e.keyCode;
       selected = wrap.find(".selectr-selected");
       hasSelection = selected.length !== 0;
@@ -123,16 +133,15 @@
             if (next.length === 0) {
               break;
             } else {
-              dunno = wrap.prev().find("optgroup").length > 0 ? 2 : 1;
+              gutter = multiple ? 2 : 1;
               selected.removeClass("selectr-selected");
               next.addClass("selectr-selected");
               currentScrollTop = resultList.scrollTop() + resultList.height();
-              selectedHeight = (selected.index() + dunno) * selected.height();
+              selectedHeight = (selected.index() + gutter) * selected.height();
               offset = selectedHeight - currentScrollTop;
-              console.log("scroll top", currentScrollTop);
-              console.log("selection height", selectedHeight);
-              console.log("results height", resultList.height(), resultList.outerHeight());
-              resultList.scrollTop(resultList.scrollTop() + offset);
+              if (selectedHeight > currentScrollTop) {
+                resultList.scrollTop(resultList.scrollTop() + offset);
+              }
             }
           }
           e.preventDefault();
@@ -140,7 +149,9 @@
         case 13:
           if (hasSelection) {
             selected.removeClass("selectr-selected");
-            makeSelection(selected, wrap);
+            wrap.find(".selectr-search").val("");
+            makeSelection(selected, wrap, multiple);
+            resetResults(wrap);
             break;
           }
           break;
@@ -149,10 +160,35 @@
       }
     };
 
-    makeSelection = function(selectedItem, wrap) {
-      wrap.find(".selectr-toggle span").text(selectedItem.text());
-      hideDrop(wrap);
+    resetResults = function(wrap) {
+      var data, newResultsList;
+      data = createDataModel(wrap.prev("select"));
+      newResultsList = createResultsListFromData(data);
+      return wrap.find(".selectr-results").replaceWith(newResultsList);
+    };
+
+    makeSelection = function(selectedItem, wrap, multiple) {
+      if (!multiple) {
+        wrap.find(".selectr-toggle span").text(selectedItem.text());
+      } else {
+        addMultiSelection(selectedItem, wrap);
+      }
       return wrap.prev("select").val(selectedItem.find("button").data("value"));
+    };
+
+    addMultiSelection = function(selectedItem, wrap) {
+      var item, selectionList;
+      selectionList = wrap.find(".selectr-selections ul");
+      item = $("<li class=\"selectr-pill\">\n  <button data-value=\"" + (selectedItem.data('value')) + "\" data-selected=\"" + (selectedItem.data('selected')) + "\">\n    " + (selectedItem.text()) + "\n  </button>\n</li>");
+      return selectionList.prepend(item);
+    };
+
+    removeMultiSelection = function(selectedItem) {
+      var item;
+      item = $(selectedItem).parent();
+      return item.fadeOut(function() {
+        return item.remove();
+      });
     };
 
     toggleClick = function(drop, wrap, searchInput) {
@@ -164,31 +200,47 @@
       }
     };
 
-    resultClick = function(e) {
-      return makeSelection($(e.currentTarget).parent(), $(e.currentTarget).parents(".selectr-wrap"));
-    };
-
-    bindEvents = function(select, wrap) {
-      var data, drop, resultsList, searchInput, toggleBtn;
+    bindEvents = function(select, wrap, options) {
+      var drop, multiSelectSearch, multiSelectWrap, searchInput, toggleBtn;
       toggleBtn = wrap.find(".selectr-toggle");
       drop = wrap.find(".selectr-drop");
       searchInput = wrap.find(".selectr-search");
-      resultsList = wrap.find(".selectr-results");
-      data = createDataModel(resultsList);
-      drop.delegate(".selectr-results button", "click", resultClick);
-      drop.delegate(".selectr-item", "mouseover", function(e) {
+      multiSelectWrap = wrap.find(".selectr-selections");
+      multiSelectSearch = multiSelectWrap.find(".selectr-search");
+      multiSelectSearch.on("focus", function() {
+        multiSelectSearch.attr("placeholder", "");
+        return multiSelectSearch.width(30);
+      });
+      multiSelectSearch.on("blur", function() {
+        multiSelectSearch.attr("placeholder", multiSelectSearch.data("placeholder"));
+        return multiSelectSearch.width(options.width - 20);
+      });
+      multiSelectWrap.on("click", ".selectr-pill button", function(e) {
+        return removeMultiSelection($(e.currentTarget));
+      });
+      drop.on("mouseover", ".selectr-item", function(e) {
         wrap.find(".selectr-selected").removeClass("selectr-selected");
         return $(e.currentTarget).addClass("selectr-selected");
       });
-      toggleBtn.click(function(e) {
-        toggleClick(drop, wrap, searchInput);
-        return e.preventDefault();
+      drop.on("click", ".selectr-item button", function(e) {
+        makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple);
+        return hideDrop(wrap);
       });
+      if (options.multiple) {
+        searchInput.focus(function() {
+          return showDrop(wrap);
+        });
+      } else {
+        toggleBtn.click(function(e) {
+          toggleClick(drop, wrap, searchInput);
+          return e.preventDefault();
+        });
+      }
       searchInput.keyup(debounce(250, function(e) {
-        return searchKeyUp(e, data, wrap);
+        return searchKeyUp(e, wrap);
       }));
       searchInput.keydown(function(e) {
-        return searchKeyDown(e, wrap);
+        return searchKeyDown(e, wrap, options.multiple);
       });
       return wrap;
     };
@@ -196,14 +248,13 @@
     createDataModel = function(el) {
       var data, optgroups, options;
       optgroups = $(el).find("optgroup");
+      options = $(el).find("option");
       if (optgroups.length > 0) {
         data = [];
         optgroups.each(function(i, og) {
-          var group, options;
-          group = {
-            label: $(og).attr("label"),
-            options: []
-          };
+          data.push({
+            label: $(og).attr("label")
+          });
           options = $(og).find("option");
           options.each(function(i, option) {
             var alreadyExists;
@@ -216,17 +267,15 @@
               });
             }
             if (!alreadyExists) {
-              group.options.push({
+              data.push({
                 text: $(option).text(),
                 value: $(option).val(),
                 selected: $(option).is(":selected")
               });
             }
           });
-          data.push(group);
         });
-      } else {
-        options = $(el).find("option");
+      } else if (options.length > 0) {
         data = [];
         options.each(function(i, option) {
           var alreadyExists;
@@ -255,25 +304,25 @@
       matches = [];
       $(model).each(function(i, item) {
         var match;
-        match = item.text.match(new RegExp(query, "ig"));
-        if (match != null) {
-          match = match.length === 1 ? match[0] : match;
-          matches.push({
-            text: item.text.replace(match, "<b>" + match + "</b>"),
-            value: item.value,
-            selected: item.selected
+        if (item.text != null) {
+          match = item.text.match(new RegExp(query, "ig"));
+          if (match != null) {
+            match = match.length === 1 ? match[0] : match;
+            matches.push({
+              text: item.text.replace(match, "<b>" + match + "</b>"),
+              value: item.value,
+              selected: item.selected
+            });
+          }
+          return;
+        }
+        if (item.label) {
+          return matches.push({
+            label: item.label
           });
         }
       });
       return matches;
-    };
-
-    createOptGroupListFromData = function(optgroups) {
-      var liHtml, list;
-      list = $("<ul class=\"selectr-results\"></ul>");
-      liHtml = "";
-      list.append(liHtml);
-      return list;
     };
 
     createResultsListFromData = function(data) {

@@ -164,15 +164,22 @@ $icon-spacing: 5px;
   ul, li {
     margin: 0;
     padding: 0;
+    list-style: none;
   }
   ul {
+    @include pie-clearfix;
     @extend .selectr-toggle;
+    background: transparent;
   }
-  .selectr-ms-input {
+  .selectr-ms-search {
     background: transparent;
     border: 0;
+    padding: 6px 8px;
     &:focus {
       outline: none;
     }
+  }
+  .selectr-search-wrap, .selectr-pill {
+    float: left;
   }
 }
