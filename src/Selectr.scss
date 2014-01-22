@@ -68,6 +68,12 @@ $icon-spacing: 5px;
       button {
         color: #fff;
       }
+      &.selectr-disabled {
+        background: transparent;
+        button {
+          color: #aaa;
+        }
+      }
     }
     button {
       border: 0;
@@ -84,6 +90,12 @@ $icon-spacing: 5px;
       b {
         font-weight: bold;
         text-decoration: underline;
+      }
+    }
+    &.selectr-disabled {
+      button {
+        color: #aaa;
+        cursor: default;
       }
     }
   }

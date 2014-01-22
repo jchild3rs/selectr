@@ -122,7 +122,7 @@
       switch (stroke) {
         case 38:
           if (hasSelection && selected.index() !== 0) {
-            prev = selected.prevAll(".selectr-item:visible").first();
+            prev = selected.prevAll(".selectr-item:visible").not(".selectr-disabled").first();
             selected.removeClass("selectr-selected");
             prev.addClass("selectr-selected");
             currentScrollTop = resultList.scrollTop() + resultList.height();
@@ -136,9 +136,9 @@
           break;
         case 40:
           if (!hasSelection) {
-            wrap.find(".selectr-item:visible").first().addClass("selectr-selected");
+            wrap.find(".selectr-item:visible").not(".selectr-disabled").first().addClass("selectr-selected");
           } else {
-            next = selected.nextAll(".selectr-item:visible").first();
+            next = selected.nextAll(".selectr-item:visible").not(".selectr-disabled").first();
             if (next.length === 0) {
               break;
             } else {
@@ -160,7 +160,9 @@
             selected.removeClass("selectr-selected");
             wrap.find(".selectr-search").val("");
             makeSelection(selected, wrap, multiple);
-            resetResults(wrap);
+            if (!multiple) {
+              resetResults(wrap);
+            }
             break;
           }
           break;
@@ -179,6 +181,7 @@
     makeSelection = function(selectedItem, wrap, multiple) {
       if (!multiple) {
         wrap.find(".selectr-toggle span").text(selectedItem.text());
+        hideDrop(wrap);
       } else {
         addMultiSelection(selectedItem, wrap);
       }
@@ -187,14 +190,15 @@
 
     addMultiSelection = function(selectedItem, wrap) {
       var item, selectionList;
+      $(selectedItem).addClass("selectr-disabled");
       selectionList = wrap.find(".selectr-selections ul");
       item = $("<li class=\"selectr-pill\">\n  <button data-value=\"" + (selectedItem.data('value')) + "\" data-selected=\"" + (selectedItem.data('selected')) + "\">\n    " + (selectedItem.text()) + "\n  </button>\n</li>");
       return selectionList.prepend(item);
     };
 
-    removeMultiSelection = function(selectedItem) {
+    removeMultiSelection = function(pill) {
       var item;
-      item = $(selectedItem).parent();
+      item = $(pill).parent();
       return item.fadeOut(function() {
         return item.remove();
       });
@@ -228,12 +232,18 @@
         return removeMultiSelection($(e.currentTarget));
       });
       drop.on("mouseover", ".selectr-item", function(e) {
-        wrap.find(".selectr-selected").removeClass("selectr-selected");
-        return $(e.currentTarget).addClass("selectr-selected");
+        if (!$(e.currentTarget).hasClass("selectr-disabled")) {
+          wrap.find(".selectr-selected").removeClass("selectr-selected");
+          return $(e.currentTarget).addClass("selectr-selected");
+        }
       });
       drop.on("click", ".selectr-item button", function(e) {
-        makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple);
-        return hideDrop(wrap);
+        if (!$(e.currentTarget).parent().hasClass("selectr-disabled")) {
+          makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple);
+          if (!options.multiple) {
+            return hideDrop(wrap);
+          }
+        }
       });
       if (options.multiple) {
         searchInput.focus(function() {

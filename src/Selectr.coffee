@@ -115,7 +115,7 @@
       switch stroke
         when 38 # up
           if hasSelection and selected.index() isnt 0
-            prev = selected.prevAll(".selectr-item:visible").first()
+            prev = selected.prevAll(".selectr-item:visible").not(".selectr-disabled").first()
             selected.removeClass("selectr-selected")
             prev.addClass("selectr-selected")
             currentScrollTop = resultList.scrollTop() + resultList.height()
@@ -127,9 +127,9 @@
           break
         when 40 # down
           if not hasSelection
-            wrap.find(".selectr-item:visible").first().addClass("selectr-selected")
+            wrap.find(".selectr-item:visible").not(".selectr-disabled").first().addClass("selectr-selected")
           else
-            next = selected.nextAll(".selectr-item:visible").first()
+            next = selected.nextAll(".selectr-item:visible").not(".selectr-disabled").first()
             if next.length is 0
               break
             else
@@ -152,8 +152,9 @@
             selected.removeClass("selectr-selected")
             wrap.find(".selectr-search").val("")
             makeSelection(selected, wrap, multiple)
-            # reset results list
-            resetResults(wrap)
+            if not multiple
+              # reset results list
+              resetResults(wrap)
             break
         else
           break
@@ -166,12 +167,15 @@
     makeSelection = (selectedItem, wrap, multiple) ->
       if not multiple
         wrap.find(".selectr-toggle span").text selectedItem.text()
-#        hideDrop(wrap)
+        hideDrop(wrap)
       else
         addMultiSelection(selectedItem, wrap)
       wrap.prev("select").val(selectedItem.find("button").data("value"))
 
     addMultiSelection = (selectedItem, wrap) ->
+
+      $(selectedItem).addClass("selectr-disabled")
+
       selectionList = wrap.find(".selectr-selections ul")
       item = $("""<li class="selectr-pill">
         <button data-value="#{selectedItem.data('value')}" data-selected="#{selectedItem.data('selected')}">
@@ -180,8 +184,8 @@
       </li>""")
       selectionList.prepend item
 
-    removeMultiSelection = (selectedItem) ->
-      item = $(selectedItem).parent()
+    removeMultiSelection = (pill) ->
+      item = $(pill).parent()
       item.fadeOut -> item.remove()
 
     toggleClick = (drop, wrap, searchInput) ->
@@ -210,12 +214,15 @@
         removeMultiSelection($(e.currentTarget))
 
       drop.on "mouseover", ".selectr-item", (e) ->
-        wrap.find(".selectr-selected").removeClass("selectr-selected")
-        $(e.currentTarget).addClass("selectr-selected")
+        if not $(e.currentTarget).hasClass("selectr-disabled")
+          wrap.find(".selectr-selected").removeClass("selectr-selected")
+          $(e.currentTarget).addClass("selectr-selected")
 
       drop.on "click", ".selectr-item button", (e) ->
-        makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple)
-        hideDrop(wrap)
+        if not $(e.currentTarget).parent().hasClass("selectr-disabled")
+          makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple)
+          if not options.multiple
+            hideDrop(wrap)
 
       if options.multiple
         searchInput.focus ->
