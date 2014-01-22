@@ -44,6 +44,12 @@ $icon-spacing: 5px;
   overflow-y: auto;
   max-height: 240px;
   -webkit-overflow-scrolling: touch;
+  .selectr-label {
+    padding: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
   &.no-results {
     .selectr-item {
       padding: 7px 6px;

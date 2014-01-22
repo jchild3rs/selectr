@@ -1,8 +1,7 @@
 (($) ->
 
   # todo: handle optgroup
-  # todo: add selection logic, make sure selection logic updates original <select>
-  
+
   class Selectr
 
     constructor: (@select, opts) ->
@@ -13,23 +12,23 @@
       setupUI(@select, @options)
 
     setupUI = (select, options) ->
-      selected = select.find(":selected")
+      placeholder = determinePlaceholderText(select)
       wrap = $("<div/>", {class: "selectr-wrap"}).css({width: options.width})
-      toggleBtn = $("<a />", {class: "selectr-toggle"}).append("<span>#{selected.text()}</span><div><i></i></div>");
+      toggleBtn = $("<a />", {class: "selectr-toggle"}).append("<span>#{placeholder}</span><div><i></i></div>");
       searchInput = $ "<input />", {class: "selectr-search", type: "text", autocomplete: "off"}
       dropdownWrap = $("<div />", {class: "selectr-drop"})
       multiSelectWrap = $("""
         <div class="selectr-selections"> 
           <ul>
             <li>
-              <input type="text" class="selectr-ms-input" placeholder="#{selected.text()}" />
+              <input type="text" class="selectr-ms-input" placeholder="#{placeholder}" />
             </li>
           </ul>
         </div>
       """)
 
-      resultsList = createResultsListFromData(createDataModel(select))
-
+      data = createDataModel(select)
+      resultsList = createResultsListFromData(data)
       if options.multiple
         dropdownWrap.append resultsList
         wrap.append multiSelectWrap, dropdownWrap
@@ -41,6 +40,16 @@
 
       # hide original input and append new wrapper
       select.hide().after(wrap)
+
+    determinePlaceholderText = (select) ->
+      if select.attr("placeholder")
+        select.attr("placeholder")
+      else if select.data("placeholder")
+        select.data("placeholder")
+      else if select.find(":selected").length > 0
+        select.find(":selected").text()
+      else
+        "Select an option"
 
     showDrop = (wrap) ->
       wrap.addClass "selectr-open"
@@ -82,8 +91,9 @@
       switch stroke
         when 38 # up
           if hasSelection and selected.index() isnt 0
+            prev = selected.prevAll(".selectr-item:visible").first()
             selected.removeClass("selectr-selected")
-            selected.prev(":visible").addClass("selectr-selected")
+            prev.addClass("selectr-selected")
             currentScrollTop = resultList.scrollTop() + resultList.height()
             selectedHeight = ((selected.index() - 1) * selected.height())
             offset = currentScrollTop - (resultList.height() - selected.height())
@@ -95,16 +105,24 @@
           if not hasSelection
             wrap.find(".selectr-item:visible").first().addClass("selectr-selected")
           else
-            if selected.next().length is 0
+            next = selected.nextAll(".selectr-item:visible").first()
+            if next.length is 0
               break
             else
+              dunno = if wrap.prev().find("optgroup").length > 0 then 2 else 1
               selected.removeClass("selectr-selected")
-              selected.next(":visible").addClass("selectr-selected")
+              next.addClass("selectr-selected")
               currentScrollTop = resultList.scrollTop() + resultList.height()
-              selectedHeight = (selected.index()+1) * selected.height()
-              if selectedHeight > currentScrollTop
-                offset = selectedHeight - currentScrollTop
-                resultList.scrollTop(resultList.scrollTop() + offset)
+              selectedHeight = (selected.index() + dunno) * selected.height()
+              offset = selectedHeight - currentScrollTop
+
+              console.log "scroll top", currentScrollTop
+              console.log "selection height", selectedHeight
+              console.log "results height", resultList.height(), resultList.outerHeight()
+#              if selectedHeight > currentScrollTop
+              resultList.scrollTop(resultList.scrollTop() + offset)
+#                offset = selectedHeight - currentScrollTop
+#                resultList.scrollTop(resultList.scrollTop() + offset)
 
           e.preventDefault()
           break
@@ -153,25 +171,31 @@
       return wrap
 
     createDataModel = (el) ->
-      options = $(el).find("option")
-      data = []
-      if options.length is 0
-        lis = $(el).find("li")
-        lis.each (i, li) ->
-          alreadyExists = false
-          if data.length > 0
-            $(data).each (i, storedItem) ->
-              if storedItem.value is $(li).find("button").data("value")
-                alreadyExists = true
-              return
-          if !alreadyExists
-            data.push
-              text: $(li).find("button").text()
-              value: $(li).find("button").data("value")
-              selected: $(li).find("button").data("selected")
+      optgroups = $(el).find("optgroup")
+      if optgroups.length > 0
+        data = []
+        optgroups.each (i, og) ->
+          group = label: $(og).attr("label"), options: []
+          options = $(og).find("option")
+          options.each (i, option) ->
+            alreadyExists = false
+            if data.length > 0
+              $(data).each (i, storedItem) ->
+                if storedItem.value is $(option).val()
+                  alreadyExists = true
+                return
+            if !alreadyExists
+              group.options.push
+                text: $(option).text()
+                value: $(option).val()
+                selected: $(option).is(":selected")
+            return
+          data.push group
           return
       else
-        options.each (i, option)->
+        options = $(el).find("option")
+        data = []
+        options.each (i, option) ->
           alreadyExists = false
           if data.length > 0
             $(data).each (i, storedItem) ->
@@ -200,20 +224,40 @@
         return
       return matches
 
+    createOptGroupListFromData = (optgroups) ->
+      list = $("<ul class=\"selectr-results\"></ul>")
+      liHtml = ""
+
+      list.append liHtml
+      return list
+
 
     createResultsListFromData = (data) ->
       list = $("<ul class=\"selectr-results\"></ul>")
       liHtml = ""
       $(data).each (i, row) ->
-        liHtml += "<li class=\"selectr-item\" id=\"selectr-item-#{i}\""
-        if row.value is ""
-          liHtml += " style=\"display: none;\">"
+        if row.hasOwnProperty("label") # has optgroups
+          liHtml += "<li class=\"selectr-label\">#{row.label}</li>"
+          $(row.options).each (i, row) ->
+            liHtml += "<li class=\"selectr-item\" id=\"selectr-item-#{i}\""
+            if row.value is ""
+              liHtml += " style=\"display: none;\">"
+            else
+              liHtml += ">"
+            liHtml += "<button type=\"button\" data-value=\"#{row.value}\" data-selected=\"#{row.selected}\">#{row.text}</button></li>"
+            return
         else
-          liHtml += ">"
-        liHtml += "<button type=\"button\" data-value=\"#{row.value}\" data-selected=\"#{row.selected}\">#{row.text}</button></li>"
+          liHtml += "<li class=\"selectr-item\" id=\"selectr-item-#{i}\""
+          if row.value is ""
+            liHtml += " style=\"display: none;\">"
+          else
+            liHtml += ">"
+          liHtml += "<button type=\"button\" data-value=\"#{row.value}\" data-selected=\"#{row.selected}\">#{row.text}</button></li>"
         return
+
       list.append liHtml
-      list
+
+      return list
 
     debounce = (threshold, func, execAsap) ->
       timeout = undefined
