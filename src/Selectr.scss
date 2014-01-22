@@ -32,6 +32,14 @@ $icon-spacing: 5px;
       }
     }
   }
+  &.selectr-multiple {
+    .selectr-item.selectr-selected {
+      background: transparent;
+      button {
+        color: #aaa;
+      }
+    }
+  }
 }
 .selectr-results {
   width: 100%;
@@ -63,12 +71,18 @@ $icon-spacing: 5px;
     width: 100%;
     font-size: 12px;
     @include box-sizing(border-box);
-    &.selectr-selected {
+    &:hover, &.selectr-active {
       background: dodgerblue;
       button {
         color: #fff;
       }
-      &.selectr-disabled {
+    }
+    &.selectr-disabled {
+      background: transparent;
+      button {
+        color: #aaa;
+      }
+      &:hover {
         background: transparent;
         button {
           color: #aaa;
@@ -194,4 +208,7 @@ $icon-spacing: 5px;
   .selectr-search-wrap, .selectr-pill {
     float: left;
   }
+}
+.selectr-hidden {
+  display: none;
 }

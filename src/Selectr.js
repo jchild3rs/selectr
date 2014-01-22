@@ -1,15 +1,19 @@
 (function($) {
   var Selectr;
   Selectr = (function() {
-    var addMultiSelection, bindEvents, createDataModel, createResultsListFromData, debounce, determinePlaceholderText, handleDOMClick, hideDrop, isValidKeyCode, makeSelection, removeMultiSelection, resetResults, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
+    var addMultiSelection, bindEvents, createDataModel, createResultsListFromData, debounce, determinePlaceholderText, handleDOMClick, handleMultiSelectSearchUI, hideDrop, isValidKeyCode, makeSelection, parseOptions, removeMultiSelection, resetResults, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
 
-    function Selectr(select, opts) {
+    function Selectr(id, select, opts) {
+      this.id = id;
       this.select = select;
       this.options = $.extend({}, $.fn.selectr.defaultOptions, opts);
       if (this.select.attr("multiple")) {
         this.options.multiple = true;
       }
-      setupUI(this.select, this.options);
+      this.select.addClass("selectr-instance-" + id);
+      if ($("selectr-instance-" + id).length === 0) {
+        setupUI(this.select, this.options);
+      }
     }
 
     setupUI = function(select, options) {
@@ -37,7 +41,7 @@
       resultsList = createResultsListFromData(data);
       if (options.multiple) {
         dropdownWrap.append(resultsList);
-        wrap.append(multiSelectWrap, dropdownWrap);
+        wrap.append(multiSelectWrap, dropdownWrap).addClass("selectr-multiple");
       } else {
         dropdownWrap.append(searchInput, resultsList);
         wrap.append(toggleBtn, dropdownWrap);
@@ -115,16 +119,16 @@
     searchKeyDown = function(e, wrap, multiple) {
       var currentScrollTop, drop, gutter, hasSelection, next, offset, prev, resultList, selected, selectedHeight, stroke;
       stroke = e.which || e.keyCode;
-      selected = wrap.find(".selectr-selected");
+      selected = wrap.find(".selectr-active");
       hasSelection = selected.length !== 0;
       drop = wrap.find(".selectr-drop");
       resultList = wrap.find(".selectr-results");
       switch (stroke) {
         case 38:
           if (hasSelection && selected.index() !== 0) {
-            prev = selected.prevAll(".selectr-item:visible").not(".selectr-disabled").first();
-            selected.removeClass("selectr-selected");
-            prev.addClass("selectr-selected");
+            prev = selected.prevAll(".selectr-item:visible").not(".selectr-selected").first();
+            selected.removeClass("selectr-active");
+            prev.addClass("selectr-active");
             currentScrollTop = resultList.scrollTop() + resultList.height();
             selectedHeight = (selected.index() - 1) * selected.height();
             offset = currentScrollTop - (resultList.height() - selected.height());
@@ -136,15 +140,15 @@
           break;
         case 40:
           if (!hasSelection) {
-            wrap.find(".selectr-item:visible").not(".selectr-disabled").first().addClass("selectr-selected");
+            wrap.find(".selectr-item:visible").not(".selectr-selected").first().addClass("selectr-active");
           } else {
-            next = selected.nextAll(".selectr-item:visible").not(".selectr-disabled").first();
+            next = selected.nextAll(".selectr-item:visible").not(".selectr-selected").first();
             if (next.length === 0) {
               break;
             } else {
               gutter = multiple ? 2 : 1;
-              selected.removeClass("selectr-selected");
-              next.addClass("selectr-selected");
+              selected.removeClass("selectr-active");
+              next.addClass("selectr-active");
               currentScrollTop = resultList.scrollTop() + resultList.height();
               selectedHeight = (selected.index() + gutter) * selected.height();
               offset = selectedHeight - currentScrollTop;
@@ -157,7 +161,7 @@
           break;
         case 13:
           if (hasSelection) {
-            selected.removeClass("selectr-selected");
+            selected.removeClass("selectr-active");
             wrap.find(".selectr-search").val("");
             makeSelection(selected, wrap, multiple);
             if (!multiple) {
@@ -182,18 +186,29 @@
       if (!multiple) {
         wrap.find(".selectr-toggle span").text(selectedItem.text());
         hideDrop(wrap);
+        return wrap.prev("select").val(selectedItem.find("button").data("value"));
       } else {
-        addMultiSelection(selectedItem, wrap);
+        return addMultiSelection(selectedItem, wrap);
       }
-      return wrap.prev("select").val(selectedItem.find("button").data("value"));
     };
 
     addMultiSelection = function(selectedItem, wrap) {
-      var item, selectionList;
-      $(selectedItem).addClass("selectr-disabled");
+      var item, option, selectionList, val;
+      $(selectedItem).addClass("selectr-selected");
+      wrap.find(".selectr-results").scrollTop(0);
       selectionList = wrap.find(".selectr-selections ul");
       item = $("<li class=\"selectr-pill\">\n  <button data-value=\"" + (selectedItem.data('value')) + "\" data-selected=\"" + (selectedItem.data('selected')) + "\">\n    " + (selectedItem.text()) + "\n  </button>\n</li>");
-      return selectionList.prepend(item);
+      if (selectionList.find(".selectr-pill").length > 0) {
+        selectionList.find(".selectr-pill").last().after(item);
+      } else {
+        selectionList.prepend(item);
+      }
+      if (selectedItem.is("li")) {
+        val = selectedItem.find("button").data("value");
+      } else if (selectedItem === "button") {
+        val = selectedItem.data("value");
+      }
+      return option = wrap.prev('select').find("option[value='" + val + "']").first().attr("selected", "selected");
     };
 
     removeMultiSelection = function(pill) {
@@ -213,32 +228,31 @@
       }
     };
 
-    bindEvents = function(select, wrap, options) {
-      var drop, multiSelectSearch, multiSelectWrap, searchInput, toggleBtn;
-      toggleBtn = wrap.find(".selectr-toggle");
-      drop = wrap.find(".selectr-drop");
-      searchInput = wrap.find(".selectr-search");
-      multiSelectWrap = wrap.find(".selectr-selections");
-      multiSelectSearch = multiSelectWrap.find(".selectr-search");
+    handleMultiSelectSearchUI = function(wrap) {
+      var multiSelectSearch;
+      multiSelectSearch = wrap.find(".selectr-search");
       multiSelectSearch.on("focus", function() {
         multiSelectSearch.attr("placeholder", "");
         return multiSelectSearch.width(30);
       });
       multiSelectSearch.on("blur", function() {
-        multiSelectSearch.attr("placeholder", multiSelectSearch.data("placeholder"));
-        return multiSelectSearch.width(options.width - 20);
-      });
-      multiSelectWrap.on("click", ".selectr-pill button", function(e) {
-        return removeMultiSelection($(e.currentTarget));
-      });
-      drop.on("mouseover", ".selectr-item", function(e) {
-        if (!$(e.currentTarget).hasClass("selectr-disabled")) {
-          wrap.find(".selectr-selected").removeClass("selectr-selected");
-          return $(e.currentTarget).addClass("selectr-selected");
+        if (wrap.find(".selectr-pill").length === 0) {
+          return multiSelectSearch.attr("placeholder", multiSelectSearch.data("placeholder"));
         }
       });
+      return wrap.on("click", ".selectr-pill button", function(e) {
+        return removeMultiSelection($(e.currentTarget));
+      });
+    };
+
+    bindEvents = function(select, wrap, options) {
+      var drop, searchInput, toggleBtn;
+      toggleBtn = wrap.find(".selectr-toggle");
+      drop = wrap.find(".selectr-drop");
+      searchInput = wrap.find(".selectr-search");
+      handleMultiSelectSearchUI(wrap.find(".selectr-selections"));
       drop.on("click", ".selectr-item button", function(e) {
-        if (!$(e.currentTarget).parent().hasClass("selectr-disabled")) {
+        if (!$(e.currentTarget).parent().hasClass("selectr-selected")) {
           makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple);
           if (!options.multiple) {
             return hideDrop(wrap);
@@ -264,56 +278,46 @@
       return wrap;
     };
 
+    parseOptions = function(options) {
+      var data;
+      data = [];
+      options.each(function(i, option) {
+        var alreadyExists;
+        alreadyExists = false;
+        if (data.length > 0) {
+          $(data).each(function(i, storedItem) {
+            if (storedItem.value === $(option).val()) {
+              alreadyExists = true;
+            }
+          });
+        }
+        if (!alreadyExists) {
+          data.push({
+            text: $(option).text(),
+            value: $(option).val(),
+            selected: $(option).is(":selected"),
+            disabled: $(option).is(":disabled")
+          });
+        }
+      });
+      return data;
+    };
+
     createDataModel = function(el) {
       var data, optgroups, options;
       optgroups = $(el).find("optgroup");
       options = $(el).find("option");
+      data = [];
       if (optgroups.length > 0) {
-        data = [];
         optgroups.each(function(i, og) {
           data.push({
             label: $(og).attr("label")
           });
           options = $(og).find("option");
-          options.each(function(i, option) {
-            var alreadyExists;
-            alreadyExists = false;
-            if (data.length > 0) {
-              $(data).each(function(i, storedItem) {
-                if (storedItem.value === $(option).val()) {
-                  alreadyExists = true;
-                }
-              });
-            }
-            if (!alreadyExists) {
-              data.push({
-                text: $(option).text(),
-                value: $(option).val(),
-                selected: $(option).is(":selected")
-              });
-            }
-          });
+          data = data.concat(parseOptions(options));
         });
       } else if (options.length > 0) {
-        data = [];
-        options.each(function(i, option) {
-          var alreadyExists;
-          alreadyExists = false;
-          if (data.length > 0) {
-            $(data).each(function(i, storedItem) {
-              if (storedItem.value === $(option).val()) {
-                alreadyExists = true;
-              }
-            });
-          }
-          if (!alreadyExists) {
-            data.push({
-              text: $(option).text(),
-              value: $(option).val(),
-              selected: $(option).is(":selected")
-            });
-          }
-        });
+        data = parseOptions(options);
       }
       return data;
     };
@@ -330,7 +334,8 @@
             matches.push({
               text: item.text.replace(match, "<b>" + match + "</b>"),
               value: item.value,
-              selected: item.selected
+              selected: item.selected,
+              disabled: item.disabled
             });
           }
           return;
@@ -352,21 +357,25 @@
         if (row.hasOwnProperty("label")) {
           liHtml += "<li class=\"selectr-label\">" + row.label + "</li>";
           $(row.options).each(function(i, row) {
-            liHtml += "<li class=\"selectr-item\" id=\"selectr-item-" + i + "\"";
+            liHtml += "<li id=\"selectr-item-" + i + "\" class=\"selectr-item";
             if (row.value === "") {
-              liHtml += " style=\"display: none;\">";
-            } else {
-              liHtml += ">";
+              liHtml += " selectr-hidden";
             }
+            if (row.selected) {
+              liHtml += " selectr-selected";
+            }
+            liHtml += "\">";
             liHtml += "<button type=\"button\" data-value=\"" + row.value + "\" data-selected=\"" + row.selected + "\">" + row.text + "</button></li>";
           });
         } else {
-          liHtml += "<li class=\"selectr-item\" id=\"selectr-item-" + i + "\"";
+          liHtml += "<li id=\"selectr-item-" + i + "\" class=\"selectr-item";
           if (row.value === "") {
-            liHtml += " style=\"display: none;\">";
-          } else {
-            liHtml += ">";
+            liHtml += " selectr-hidden";
           }
+          if (row.selected) {
+            liHtml += " selectr-selected";
+          }
+          liHtml += "\">";
           liHtml += "<button type=\"button\" data-value=\"" + row.value + "\" data-selected=\"" + row.selected + "\">" + row.text + "</button></li>";
         }
       });
@@ -415,8 +424,8 @@
 
   })();
   $.fn.selectr = function(options) {
-    return this.each(function() {
-      return new Selectr($(this), options);
+    return this.each(function(i) {
+      return new Selectr(i, $(this), options);
     });
   };
   return $.fn.selectr.defaultOptions = {

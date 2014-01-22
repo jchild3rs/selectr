@@ -2,16 +2,18 @@
 
   class Selectr
 
-    constructor: (@select, opts) ->
+    constructor: (@id, @select, opts) ->
 
       # merge user provided options w/ defaults
       @options = $.extend({}, $.fn.selectr.defaultOptions, opts)
       @options.multiple = true if @select.attr("multiple")
-      setupUI(@select, @options)
+      @select.addClass "selectr-instance-#{id}"
+      setupUI(@select, @options) if $("selectr-instance-#{id}").length is 0
 
     setupUI = (select, options) ->
       placeholder = determinePlaceholderText(select)
       wrap = $("<div/>", {class: "selectr-wrap"}).css width: options.width, maxHeight: options.height
+
       toggleBtn = $("<a />", {class: "selectr-toggle"}).append("<span>#{placeholder}</span><div><i></i></div>");
       searchInput = $ "<input />", {class: "selectr-search", type: "text", autocomplete: "off"}
       dropdownWrap = $("<div />", {class: "selectr-drop"})
@@ -26,10 +28,11 @@
       """)
 
       data = createDataModel(select)
+
       resultsList = createResultsListFromData(data)
       if options.multiple
         dropdownWrap.append resultsList
-        wrap.append multiSelectWrap, dropdownWrap
+        wrap.append(multiSelectWrap, dropdownWrap).addClass "selectr-multiple"
       else
         dropdownWrap.append searchInput, resultsList
         wrap.append toggleBtn, dropdownWrap
@@ -76,7 +79,6 @@
       drop.hide()
 
     searchKeyUp = (e, wrap) ->
-      # todo: make sure search works w/ optgroup
       stroke = e.which || e.keyCode
       data = createDataModel wrap.prev("select")
       if isValidKeyCode(stroke)
@@ -107,7 +109,7 @@
 
     searchKeyDown = (e, wrap, multiple) ->
       stroke = e.which || e.keyCode
-      selected = wrap.find(".selectr-selected")
+      selected = wrap.find(".selectr-active")
       hasSelection = selected.length isnt 0
       drop = wrap.find(".selectr-drop")
       resultList = wrap.find(".selectr-results")
@@ -115,9 +117,9 @@
       switch stroke
         when 38 # up
           if hasSelection and selected.index() isnt 0
-            prev = selected.prevAll(".selectr-item:visible").not(".selectr-disabled").first()
-            selected.removeClass("selectr-selected")
-            prev.addClass("selectr-selected")
+            prev = selected.prevAll(".selectr-item:visible").not(".selectr-selected").first()
+            selected.removeClass("selectr-active")
+            prev.addClass("selectr-active")
             currentScrollTop = resultList.scrollTop() + resultList.height()
             selectedHeight = ((selected.index() - 1) * selected.height())
             offset = currentScrollTop - (resultList.height() - selected.height())
@@ -127,15 +129,15 @@
           break
         when 40 # down
           if not hasSelection
-            wrap.find(".selectr-item:visible").not(".selectr-disabled").first().addClass("selectr-selected")
+            wrap.find(".selectr-item:visible").not(".selectr-selected").first().addClass("selectr-active")
           else
-            next = selected.nextAll(".selectr-item:visible").not(".selectr-disabled").first()
+            next = selected.nextAll(".selectr-item:visible").not(".selectr-selected").first()
             if next.length is 0
               break
             else
               gutter = if multiple then 2 else 1
-              selected.removeClass("selectr-selected")
-              next.addClass("selectr-selected")
+              selected.removeClass("selectr-active")
+              next.addClass("selectr-active")
               currentScrollTop = resultList.scrollTop() + resultList.height()
               selectedHeight = (selected.index() + gutter) * selected.height()
               offset = selectedHeight - currentScrollTop
@@ -149,7 +151,7 @@
           break
         when 13 # enter
           if hasSelection
-            selected.removeClass("selectr-selected")
+            selected.removeClass("selectr-active")
             wrap.find(".selectr-search").val("")
             makeSelection(selected, wrap, multiple)
             if not multiple
@@ -168,13 +170,15 @@
       if not multiple
         wrap.find(".selectr-toggle span").text selectedItem.text()
         hideDrop(wrap)
+        wrap.prev("select").val(selectedItem.find("button").data("value"))
       else
         addMultiSelection(selectedItem, wrap)
-      wrap.prev("select").val(selectedItem.find("button").data("value"))
+
 
     addMultiSelection = (selectedItem, wrap) ->
 
-      $(selectedItem).addClass("selectr-disabled")
+      $(selectedItem).addClass("selectr-selected")
+      wrap.find(".selectr-results").scrollTop(0)
 
       selectionList = wrap.find(".selectr-selections ul")
       item = $("""<li class="selectr-pill">
@@ -182,7 +186,21 @@
           #{selectedItem.text()}
         </button>
       </li>""")
-      selectionList.prepend item
+      if selectionList.find(".selectr-pill").length > 0
+        selectionList.find(".selectr-pill").last().after item
+      else
+        selectionList.prepend item
+
+#      wrap.prev("select").find("option").each  (i, option) ->
+      if selectedItem.is "li"
+        val = selectedItem.find("button").data("value")
+      else if selectedItem is "button"
+        val = selectedItem.data("value")
+      option = wrap.prev('select').find("option[value='#{val}']").first().attr("selected", "selected")
+
+#        if selectedItem.data("value") is $(option).val()
+#          $(option).attr("selected", "selected")
+
 
     removeMultiSelection = (pill) ->
       item = $(pill).parent()
@@ -195,31 +213,36 @@
       else
         hideDrop(wrap)
 
-#    resultClick = (selected, wrap, multiple) -> makeSelection(selected, wrap, multiple)
-    bindEvents = (select, wrap, options) ->
-#      'selectr-ms-search'
-      toggleBtn = wrap.find ".selectr-toggle"
-      drop = wrap.find ".selectr-drop"
-      searchInput = wrap.find ".selectr-search"
-      multiSelectWrap = wrap.find ".selectr-selections"
-      multiSelectSearch = multiSelectWrap.find ".selectr-search"
+    handleMultiSelectSearchUI = (wrap) ->
+      multiSelectSearch = wrap.find ".selectr-search"
 
       multiSelectSearch.on "focus", ->
         multiSelectSearch.attr("placeholder", "")
         multiSelectSearch.width(30)
+
       multiSelectSearch.on "blur", ->
-        multiSelectSearch.attr("placeholder", multiSelectSearch.data("placeholder"))
-        multiSelectSearch.width(options.width - 20)
-      multiSelectWrap.on "click", ".selectr-pill button", (e) ->
+        if wrap.find(".selectr-pill").length is 0
+          multiSelectSearch.attr("placeholder", multiSelectSearch.data("placeholder"))
+#        multiSelectSearch.width(wrap.width() - 20)
+
+      wrap.on "click", ".selectr-pill button", (e) ->
         removeMultiSelection($(e.currentTarget))
 
-      drop.on "mouseover", ".selectr-item", (e) ->
-        if not $(e.currentTarget).hasClass("selectr-disabled")
-          wrap.find(".selectr-selected").removeClass("selectr-selected")
-          $(e.currentTarget).addClass("selectr-selected")
+    bindEvents = (select, wrap, options) ->
+
+      toggleBtn = wrap.find ".selectr-toggle"
+      drop = wrap.find ".selectr-drop"
+      searchInput = wrap.find ".selectr-search"
+
+      handleMultiSelectSearchUI(wrap.find ".selectr-selections")
+
+#      drop.on "mouseover", ".selectr-item", (e) ->
+#        if not $(e.currentTarget).hasClass("selectr-selected")
+#          wrap.find(".selectr-selected").removeClass("selectr-selected")
+#          $(e.currentTarget).addClass("selectr-selected")
 
       drop.on "click", ".selectr-item button", (e) ->
-        if not $(e.currentTarget).parent().hasClass("selectr-disabled")
+        if not $(e.currentTarget).parent().hasClass("selectr-selected")
           makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple)
           if not options.multiple
             hideDrop(wrap)
@@ -237,45 +260,37 @@
 
       return wrap
 
+    parseOptions = (options) ->
+      data = []
+      options.each (i, option) ->
+
+        alreadyExists = false
+        if data.length > 0
+          $(data).each (i, storedItem) ->
+            if storedItem.value is $(option).val()
+              alreadyExists = true
+            return
+        if not alreadyExists
+          data.push
+            text: $(option).text()
+            value: $(option).val()
+            selected: $(option).is(":selected")
+            disabled: $(option).is(":disabled")
+        return
+      data
+
     createDataModel = (el) ->
       optgroups = $(el).find("optgroup")
       options = $(el).find("option")
+      data = []
       if optgroups.length > 0
-        data = []
         optgroups.each (i, og) ->
           data.push label: $(og).attr("label")
           options = $(og).find("option")
-          options.each (i, option) ->
-            alreadyExists = false
-            if data.length > 0
-              $(data).each (i, storedItem) ->
-                if storedItem.value is $(option).val()
-                  alreadyExists = true
-                return
-            if not alreadyExists
-              data.push
-
-                text: $(option).text()
-                value: $(option).val()
-                selected: $(option).is(":selected")
-            return
-#          data.push group
+          data = data.concat(parseOptions(options))
           return
       else if options.length > 0
-        data = []
-        options.each (i, option) ->
-          alreadyExists = false
-          if data.length > 0
-            $(data).each (i, storedItem) ->
-              if storedItem.value is $(option).val()
-                alreadyExists = true
-              return
-          if not alreadyExists
-            data.push
-              text: $(option).text()
-              value: $(option).val()
-              selected: $(option).is(":selected")
-          return
+        data = parseOptions(options)
       data
 
     searchDataModel = (query, model) ->
@@ -283,22 +298,16 @@
       $(model).each (i, item) ->
         if item.text?
           match = item.text.match(new RegExp(query, "ig"))
-          
           if match?
             match = if match.length is 1 then match[0] else match
             matches.push
               text: item.text.replace(match, "<b>" + match + "</b>")
               value: item.value
               selected: item.selected
+              disabled: item.disabled
 
           return
-        if item.label
-          matches.push(label: item.label)
-#        console.log matches
-#        else if item.label?
-#
-#          $(item).each (i, item) ->
-#            matches = matches.concat(searchDataModel(query, item.options))
+        matches.push label: item.label if item.label
 
       return matches
 
@@ -309,19 +318,17 @@
         if row.hasOwnProperty("label") # has optgroups
           liHtml += "<li class=\"selectr-label\">#{row.label}</li>"
           $(row.options).each (i, row) ->
-            liHtml += "<li class=\"selectr-item\" id=\"selectr-item-#{i}\""
-            if row.value is ""
-              liHtml += " style=\"display: none;\">"
-            else
-              liHtml += ">"
+            liHtml += "<li id=\"selectr-item-#{i}\" class=\"selectr-item"
+            liHtml += " selectr-hidden" if row.value is ""
+            liHtml += " selectr-selected" if row.selected
+            liHtml += "\">"
             liHtml += "<button type=\"button\" data-value=\"#{row.value}\" data-selected=\"#{row.selected}\">#{row.text}</button></li>"
             return
         else
-          liHtml += "<li class=\"selectr-item\" id=\"selectr-item-#{i}\""
-          if row.value is ""
-            liHtml += " style=\"display: none;\">"
-          else
-            liHtml += ">"
+          liHtml += "<li id=\"selectr-item-#{i}\" class=\"selectr-item"
+          liHtml += " selectr-hidden" if row.value is ""
+          liHtml += " selectr-selected" if row.selected
+          liHtml += "\">"
           liHtml += "<button type=\"button\" data-value=\"#{row.value}\" data-selected=\"#{row.selected}\">#{row.text}</button></li>"
         return
 
@@ -364,8 +371,8 @@
 
 
   $.fn.selectr = (options) ->
-    return @.each -> # Ensure chainability and apply to multiple instance at the same time.
-      return new Selectr($(this), options)
+    return @.each (i) -> # Ensure chainability and apply to multiple instance at the same time.
+      return new Selectr(i, $(this), options)
 
   $.fn.selectr.defaultOptions =
     width: 250
