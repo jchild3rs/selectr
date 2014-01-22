@@ -68,6 +68,7 @@ $icon-spacing: 5px;
     }
   }
   .selectr-item {
+    position: relative;
     width: 100%;
     font-size: 12px;
     @include box-sizing(border-box);
@@ -197,6 +198,9 @@ $icon-spacing: 5px;
     @extend .selectr-toggle;
     background: transparent;
   }
+  li {
+    float: left;
+  }
   .selectr-ms-search {
     background: transparent;
     border: 0;
@@ -204,9 +208,6 @@ $icon-spacing: 5px;
     &:focus {
       outline: none;
     }
-  }
-  .selectr-search-wrap, .selectr-pill {
-    float: left;
   }
 }
 .selectr-hidden {

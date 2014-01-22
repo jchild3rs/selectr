@@ -1,7 +1,7 @@
 (function($) {
   var Selectr;
   Selectr = (function() {
-    var addMultiSelection, bindEvents, createDataModel, createResultsListFromData, debounce, determinePlaceholderText, handleDOMClick, handleMultiSelectSearchUI, hideDrop, isValidKeyCode, makeSelection, parseOptions, removeMultiSelection, resetResults, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
+    var addMultiSelection, bindEvents, createDataModel, createResultsListFromData, debounce, determinePlaceholderText, handleDOMClick, handleMultiSelectSearchUI, hideDrop, isValidKeyCode, makeSelection, parseOptions, removeMultiSelection, resetResults, scaleSearchField, searchDataModel, searchKeyDown, searchKeyUp, setupUI, showDrop, toggleClick;
 
     function Selectr(id, select, opts) {
       this.id = id;
@@ -17,7 +17,7 @@
     }
 
     setupUI = function(select, options) {
-      var data, dropdownWrap, multiSelectWrap, placeholder, resultsList, searchInput, toggleBtn, wrap;
+      var data, dropdownWrap, msSearchInput, multiSelectWrap, placeholder, resultsList, searchInput, searchWrap, selectionList, toggleBtn, wrap;
       placeholder = determinePlaceholderText(select);
       wrap = $("<div/>", {
         "class": "selectr-wrap"
@@ -36,7 +36,18 @@
       dropdownWrap = $("<div />", {
         "class": "selectr-drop"
       });
-      multiSelectWrap = $("<div class=\"selectr-selections\"> \n  <ul>\n    <li class=\"selectr-search-wrap\">\n      <input type=\"text\" class=\"selectr-ms-search selectr-search\" data-placeholder=\"" + placeholder + "\" placeholder=\"" + placeholder + "\" autocomplete='off' />\n    </li>\n  </ul>\n</div>");
+      multiSelectWrap = $("<div />", {
+        "class": "selectr-selections"
+      });
+      selectionList = $("<ul />");
+      searchWrap = $("<li />");
+      msSearchInput = $("<input />", {
+        type: "text",
+        "class": "selectr-ms-search selectr-search",
+        autocomplete: "off",
+        placeholder: placeholder
+      });
+      multiSelectWrap.append(selectionList.append(searchWrap.append(msSearchInput)));
       data = createDataModel(select);
       resultsList = createResultsListFromData(data);
       if (options.multiple) {
@@ -193,7 +204,7 @@
     };
 
     addMultiSelection = function(selectedItem, wrap) {
-      var item, option, selectionList, val;
+      var item, selectionList, val;
       $(selectedItem).addClass("selectr-selected");
       wrap.find(".selectr-results").scrollTop(0);
       selectionList = wrap.find(".selectr-selections ul");
@@ -208,7 +219,8 @@
       } else if (selectedItem === "button") {
         val = selectedItem.data("value");
       }
-      return option = wrap.prev('select').find("option[value='" + val + "']").first().attr("selected", "selected");
+      scaleSearchField(wrap.find(".selectr-ms-search"));
+      wrap.prev('select').find("option[value=\"" + val + "\"]").first().attr("selected", "selected");
     };
 
     removeMultiSelection = function(pill) {
@@ -230,10 +242,13 @@
 
     handleMultiSelectSearchUI = function(wrap) {
       var multiSelectSearch;
-      multiSelectSearch = wrap.find(".selectr-search");
+      multiSelectSearch = wrap.find(".selectr-ms-search");
+      multiSelectSearch.on("keyup", function() {
+        return scaleSearchField($(this));
+      });
       multiSelectSearch.on("focus", function() {
         multiSelectSearch.attr("placeholder", "");
-        return multiSelectSearch.width(30);
+        return scaleSearchField($(this));
       });
       multiSelectSearch.on("blur", function() {
         if (wrap.find(".selectr-pill").length === 0) {
@@ -242,6 +257,31 @@
       });
       return wrap.on("click", ".selectr-pill button", function(e) {
         return removeMultiSelection($(e.currentTarget));
+      });
+    };
+
+    scaleSearchField = function(searchInput) {
+      var div, inputStyles, newWidth, parent, style, styles, _i, _len;
+      newWidth = 0;
+      inputStyles = "position:absolute; left: -1000px; top: -1000px; display:none;";
+      styles = ['font-size', 'font-style', 'font-weight', 'font-family', 'line-height', 'text-transform', 'letter-spacing'];
+      for (_i = 0, _len = styles.length; _i < _len; _i++) {
+        style = styles[_i];
+        inputStyles += style + ":" + searchInput.css(style) + ";";
+      }
+      div = $('<div />', {
+        'style': inputStyles
+      });
+      div.text(searchInput.val());
+      $('body').append(div);
+      newWidth = div.outerWidth() + 40;
+      div.remove();
+      parent = searchInput.parents(".selectr-selections");
+      if (newWidth > parent.outerWidth()) {
+        newWidth = parent.outerWidth() - 10;
+      }
+      return searchInput.css({
+        'width': newWidth + 'px'
       });
     };
 
@@ -256,6 +296,8 @@
           makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple);
           if (!options.multiple) {
             return hideDrop(wrap);
+          } else {
+            return searchInput.focus();
           }
         }
       });

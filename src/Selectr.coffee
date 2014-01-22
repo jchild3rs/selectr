@@ -1,5 +1,8 @@
 (($) ->
 
+  # todo: make sure "no results" cannot be "selected"
+  # todo: add keyboard deletion of mutli-select selections (maybe do highlighting w. arrow keys?)
+
   class Selectr
 
     constructor: (@id, @select, opts) ->
@@ -14,18 +17,14 @@
       placeholder = determinePlaceholderText(select)
       wrap = $("<div/>", {class: "selectr-wrap"}).css width: options.width, maxHeight: options.height
 
-      toggleBtn = $("<a />", {class: "selectr-toggle"}).append("<span>#{placeholder}</span><div><i></i></div>");
-      searchInput = $ "<input />", {class: "selectr-search", type: "text", autocomplete: "off"}
-      dropdownWrap = $("<div />", {class: "selectr-drop"})
-      multiSelectWrap = $("""
-        <div class="selectr-selections"> 
-          <ul>
-            <li class="selectr-search-wrap">
-              <input type="text" class="selectr-ms-search selectr-search" data-placeholder="#{placeholder}" placeholder="#{placeholder}" autocomplete='off' />
-            </li>
-          </ul>
-        </div>
-      """)
+      toggleBtn = $("<a />", class: "selectr-toggle").append("<span>#{placeholder}</span><div><i></i></div>");
+      searchInput = $("<input />", class: "selectr-search", type: "text", autocomplete: "off")
+      dropdownWrap = $("<div />", class: "selectr-drop")
+      multiSelectWrap = $("<div />", class: "selectr-selections")
+      selectionList = $("<ul />")
+      searchWrap = $("<li />")
+      msSearchInput = $("<input />", type: "text", class: "selectr-ms-search selectr-search", autocomplete: "off", placeholder: placeholder)
+      multiSelectWrap.append selectionList.append searchWrap.append msSearchInput
 
       data = createDataModel(select)
 
@@ -174,9 +173,7 @@
       else
         addMultiSelection(selectedItem, wrap)
 
-
     addMultiSelection = (selectedItem, wrap) ->
-
       $(selectedItem).addClass("selectr-selected")
       wrap.find(".selectr-results").scrollTop(0)
 
@@ -186,21 +183,24 @@
           #{selectedItem.text()}
         </button>
       </li>""")
+
+      # if first pill, just append, otherwise insert after last pill
       if selectionList.find(".selectr-pill").length > 0
         selectionList.find(".selectr-pill").last().after item
       else
         selectionList.prepend item
 
-#      wrap.prev("select").find("option").each  (i, option) ->
       if selectedItem.is "li"
         val = selectedItem.find("button").data("value")
       else if selectedItem is "button"
         val = selectedItem.data("value")
-      option = wrap.prev('select').find("option[value='#{val}']").first().attr("selected", "selected")
 
-#        if selectedItem.data("value") is $(option).val()
-#          $(option).attr("selected", "selected")
+      scaleSearchField(wrap.find(".selectr-ms-search"))
 
+#      adjustSearchInputWidth(wrap)
+      wrap.prev('select').find("option[value=\"#{val}\"]").first().attr("selected", "selected")
+
+      return
 
     removeMultiSelection = (pill) ->
       item = $(pill).parent()
@@ -213,20 +213,74 @@
       else
         hideDrop(wrap)
 
+#    growInput = (e) ->
+#    adjustSearchInputWidth = (wrap) ->
+#      input = wrap.find(".selectr-search")
+#      input.on "keypress", growInput
+#      console.log input.outerWidth()
+
+#      inputWidth = input.outerWidth()
+#      wrapWidth = wrap.outerWidth()
+#      console.log "input width #{inputWidth}"
+#      console.log "wrap width #{wrapWidth}"
+#      pillWidth = 0
+#      wrap.find(".selectr-pill").each ->
+#        pillWidth += $(this).width()
+#      lastPill = wrap.find(".selectr-pill").last()
+#      if lastPill.length
+#        console.log lastPill.position().top, lastPill.outerHeight()
+#      console.log "pill width #{pillWidth}"
+#      # handles first row
+#      if pillWidth < wrapWidth
+#        newWidth = wrapWidth - pillWidth
+#        input.outerWidth newWidth - 10
+#      else if lastPill.length and lastPill.position().top is (1 + lastPill.height())
+#        console.log 'row 2'
+#      else
+#        newWidth = wrapWidth - (pillWidth - wrapWidth)
+
+
+
     handleMultiSelectSearchUI = (wrap) ->
-      multiSelectSearch = wrap.find ".selectr-search"
+      multiSelectSearch = wrap.find ".selectr-ms-search"
+
+      multiSelectSearch.on "keyup", ->
+        scaleSearchField($(@))
 
       multiSelectSearch.on "focus", ->
         multiSelectSearch.attr("placeholder", "")
-        multiSelectSearch.width(30)
+        scaleSearchField($(@))
+#        adjustSearchInputWidth(wrap)
 
       multiSelectSearch.on "blur", ->
         if wrap.find(".selectr-pill").length is 0
           multiSelectSearch.attr("placeholder", multiSelectSearch.data("placeholder"))
-#        multiSelectSearch.width(wrap.width() - 20)
 
       wrap.on "click", ".selectr-pill button", (e) ->
         removeMultiSelection($(e.currentTarget))
+
+    scaleSearchField = (searchInput) ->
+
+      newWidth = 0
+
+      # creates a mock block element and applys the text and CSS to generate a new width.
+      inputStyles = "position:absolute; left: -1000px; top: -1000px; display:none;"
+      styles = ['font-size','font-style', 'font-weight', 'font-family','line-height', 'text-transform', 'letter-spacing']
+
+      for style in styles
+        inputStyles += style + ":" + searchInput.css(style) + ";"
+
+      div = $('<div />', { 'style' : inputStyles })
+      div.text searchInput.val()
+      $('body').append div
+
+      newWidth = div.outerWidth() + 40
+      div.remove()
+
+      parent = searchInput.parents(".selectr-selections")
+      newWidth = parent.outerWidth() - 10 if newWidth > parent.outerWidth()
+
+      searchInput.css({'width': newWidth + 'px'})
 
     bindEvents = (select, wrap, options) ->
 
@@ -236,16 +290,13 @@
 
       handleMultiSelectSearchUI(wrap.find ".selectr-selections")
 
-#      drop.on "mouseover", ".selectr-item", (e) ->
-#        if not $(e.currentTarget).hasClass("selectr-selected")
-#          wrap.find(".selectr-selected").removeClass("selectr-selected")
-#          $(e.currentTarget).addClass("selectr-selected")
-
       drop.on "click", ".selectr-item button", (e) ->
         if not $(e.currentTarget).parent().hasClass("selectr-selected")
           makeSelection($(e.currentTarget).parents('.selectr-item').first(), wrap, options.multiple)
           if not options.multiple
             hideDrop(wrap)
+          else
+            searchInput.focus()
 
       if options.multiple
         searchInput.focus ->
@@ -367,8 +418,6 @@
       backspaceOrDelete = (code is 8 or code is 46)
       # backspace/delete = 8, 46
       return isntUpOrDown and  isntEnterOrReturn and (validAlpha or validNumber or validPunc or validMath or space or backspaceOrDelete)
-
-
 
   $.fn.selectr = (options) ->
     return @.each (i) -> # Ensure chainability and apply to multiple instance at the same time.
