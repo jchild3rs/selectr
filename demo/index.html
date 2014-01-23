@@ -28,7 +28,8 @@
   <div class="wrap">
 
     <label for="example-1">Default Behavior</label>
-    <select id="example-1" name="Country" data-placeholder="Select Country">
+    <select id="example-1" name="Country" data-placeholder="Select Country" tabindex="1">
+      <option selected></option>
       <option value="United States">United States</option> 
       <option value="United Kingdom">United Kingdom</option> 
       <option value="Afghanistan">Afghanistan</option> 
@@ -273,7 +274,8 @@
     </select>
 
     <label for="example-2">Optgroup Support</label>
-    <select id="example-2" data-placeholder="Select your favorite team">
+    <select id="example-2" data-placeholder="Select your favorite team" tabindex="2">
+        <option selected></option>
         <optgroup label="NFC EAST">
             <option>Dallas Cowboys</option>
             <option>New York Giants</option>
@@ -288,6 +290,7 @@
         </optgroup>
         <optgroup label="NFC SOUTH">
             <option>Atlanta Falcons</option>
+          <option value="Disabled" disabled>Disabled</option>
             <option>Carolina Panthers</option>
             <option>New Orleans Saints</option>
             <option>Tampa Bay Buccaneers</option>
@@ -325,7 +328,10 @@
     </select>
 
     <label for="example-3">Multi-select</label>
-    <select id="example-3" name="Country" multiple data-placeholder="Select Country">
+    <select id="example-3" name="Country" multiple data-placeholder="Select Country" tabindex="3">
+    <option value="Selected 1" selected>Selected 1</option>
+    <option value="Selected 2" selected>Selected 2</option>
+    <option value="Disabled" disabled>Disabled</option>
     <option value="United States">United States</option>
     <option value="United Kingdom">United Kingdom</option>
     <option value="Afghanistan">Afghanistan</option>
@@ -569,6 +575,59 @@
     <option value="Zimbabwe">Zimbabwe</option>
     </select>
 
+    <label for="example-4">Optgroup w/ multiple Support</label>
+    <select id="example-4" data-placeholder="Select your favorite team" tabindex="4" multiple>
+      <option selected></option>
+      <optgroup label="NFC EAST">
+        <option>Dallas Cowboys</option>
+        <option>New York Giants</option>
+        <option>Philadelphia Eagles</option>
+        <option>Washington Redskins</option>
+      </optgroup>
+      <optgroup label="NFC NORTH">
+        <option>Chicago Bears</option>
+        <option>Detroit Lions</option>
+        <option>Green Bay Packers</option>
+        <option>Minnesota Vikings</option>
+      </optgroup>
+      <optgroup label="NFC SOUTH">
+        <option>Atlanta Falcons</option>
+        <option value="Disabled" disabled>Disabled</option>
+        <option>Carolina Panthers</option>
+        <option>New Orleans Saints</option>
+        <option>Tampa Bay Buccaneers</option>
+      </optgroup>
+      <optgroup label="NFC WEST">
+        <option>Arizona Cardinals</option>
+        <option>St. Louis Rams</option>
+        <option>San Francisco 49ers</option>
+        <option>Seattle Seahawks</option>
+      </optgroup>
+      <optgroup label="AFC EAST">
+        <option>Buffalo Bills</option>
+        <option>Miami Dolphins</option>
+        <option>New England Patriots</option>
+        <option>New York Jets</option>
+      </optgroup>
+      <optgroup label="AFC NORTH">
+        <option>Baltimore Ravens</option>
+        <option>Cincinnati Bengals</option>
+        <option>Cleveland Browns</option>
+        <option>Pittsburgh Steelers</option>
+      </optgroup>
+      <optgroup label="AFC SOUTH">
+        <option>Houston Texans</option>
+        <option>Indianapolis Colts</option>
+        <option>Jacksonville Jaguars</option>
+        <option>Tennessee Titans</option>
+      </optgroup>
+      <optgroup label="AFC WEST">
+        <option>Denver Broncos</option>
+        <option>Kansas City Chiefs</option>
+        <option>Oakland Raiders</option>
+        <option>San Diego Chargers</option>
+      </optgroup>
+    </select>
   </div>
   
   <script defer>
