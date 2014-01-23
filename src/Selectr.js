@@ -20,7 +20,8 @@ Selectr = (function() {
 
   Selectr.prototype.setup = function() {
     this.data = this.createData();
-    return this.wrap = this.createSelectrDOM();
+    this.wrap = this.createSelectrWrap();
+    return this.select.hide().after(this.wrap);
   };
 
   Selectr.prototype.createData = function() {
@@ -40,40 +41,58 @@ Selectr = (function() {
     return _results;
   };
 
+  Selectr.prototype.createListItem = function(row) {
+    var button, className, classNames, li, _i, _len;
+    if (row.label !== "") {
+      return $("<li />", {
+        "class": "selectr-label"
+      }).text(row.label);
+    } else {
+      button = $("<button />", {
+        type: "button"
+      }).data({
+        value: row.value,
+        selected: row.selected,
+        disabled: row.disabled
+      }).text(row.text);
+      li = $("<li />").append(button);
+      classNames = ["selectr-item", row.value === "" ? "selectr-hidden" : "", row.selected === "" ? "selectr-selected" : "", row.disabled === "" ? "selectr-disabled" : ""];
+      for (_i = 0, _len = classNames.length; _i < _len; _i++) {
+        className = classNames[_i];
+        if (className !== "") {
+          li.addClass(className);
+        }
+      }
+      return li;
+    }
+  };
+
   Selectr.prototype.createListFromData = function(data) {
-    var liHtml, list;
+    var lis, list, row;
     if (!data) {
       data = this.data;
     }
-    list = $("<ul class=\"selectr-results\"></ul>");
-    liHtml = "";
-    $(this.data).each(function(i, row) {
-      if (row.label !== "") {
-        liHtml += "<li class=\"selectr-label\">" + row.label + "</li>";
-      } else {
-        liHtml += "<li id=\"selectr-item-" + i + "\" class=\"selectr-item";
-        if (row.value === "") {
-          liHtml += " selectr-hidden";
-        }
-        if (row.selected) {
-          liHtml += " selectr-selected";
-        }
-        if (row.disabled) {
-          liHtml += " selectr-disabled";
-        }
-        liHtml += "\">";
-        liHtml += "  <button type=\"button\" data-value=\"" + row.value + "\"\n    data-selected=\"" + row.selected + "\" data-disabled=\"" + row.disabled + "\">\n      " + row.text + "\n  </button>\n</li>";
-      }
+    list = $("<ul />", {
+      "class": "selectr-results"
     });
-    list.append(liHtml);
-    return list;
+    lis = (function() {
+      var _i, _len, _ref, _results;
+      _ref = this.data;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        row = _ref[_i];
+        _results.push(this.createListItem(row));
+      }
+      return _results;
+    }).call(this);
+    return list.append(lis);
   };
 
   Selectr.prototype.getDefaultText = function() {
     return "Hello!";
   };
 
-  Selectr.prototype.createSelectrDOM = function() {
+  Selectr.prototype.createSelectrWrap = function() {
     var dropdownWrap, msSearchInput, multiSelectWrap, resultsList, searchInput, searchWrap, selectionList, toggleBtn, wrap;
     wrap = $("<div />", {
       "class": "selectr-wrap",
@@ -112,7 +131,6 @@ Selectr = (function() {
       dropdownWrap.append(searchInput, resultsList);
       wrap.append(toggleBtn, dropdownWrap);
     }
-    this.select.hide().after(wrap);
     return wrap;
   };
 

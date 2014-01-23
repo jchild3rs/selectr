@@ -2,36 +2,45 @@ jasmine.getStyleFixtures().fixturesPath = '/base/src/'
 jasmine.getFixtures().fixturesPath = '/base/test/fixtures/'
 
 describe "Selectr", ->
-
   beforeEach ->
     loadStyleFixtures('Selectr.css')
     loadFixtures('selectElement.html.js')
     @select = $("#select-fixture")
 
-  afterEach -> @select = null
+  afterEach ->
+    @select = null
 
-  it "should be chainable", -> expect(@select.selectr()).toEqual(@select)
-  it "should apply the instance as data on the element", -> expect(@select.selectr().data("selectr")).toBeDefined()
+  it "should be chainable", ->
+    expect(@select.selectr()).toEqual(@select)
+  it "should apply the instance as data on the element", ->
+    expect(@select.selectr().data("selectr")).toBeDefined()
 
   describe "default settings", ->
+    beforeEach ->
+      @settings = @select.selectr().data("selectr")["settings"]
+    afterEach ->
+      @settings = null
 
-    beforeEach -> @settings = @select.selectr().data("selectr")["settings"]
-    afterEach -> @settings = null
+    it "should contain default options", ->
+      expect(@settings).toBeDefined()
+    it "should have a default width of 250", ->
+      expect(@settings.width).toBe(250)
+    it "should have a default height of 200", ->
+      expect(@settings.height).toBe(200)
 
-    it "should contain default options", -> expect(@settings).toBeDefined()
-    it "should have a default width of 250", -> expect(@settings.width).toBe(250)
-    it "should have a default height of 200", -> expect(@settings.height).toBe(200)
-
-  describe "data", ->
-    beforeEach -> @select.selectr()
+  describe "data model", ->
+    beforeEach ->
+      @select.selectr()
     it "should create a simple object representing the <option> data", ->
       expect(@select.data("selectr").hasOwnProperty("data")).toBeTruthy()
       expect(@select.data("selectr").data.length).toBe(@select.find("option").length)
+
   describe "UI setup", ->
+    beforeEach ->
+      @select.selectr()
 
-    beforeEach -> @select.selectr()
-
-    it "should hide the original input", -> expect(@select).toBeHidden()
+    it "should hide the original input", ->
+      expect(@select).toBeHidden()
     it "should create a wrapper as a sibling to original input", ->
       expect(@select.next(".selectr-wrap")).toExist()
     it "should use default width option for width if it is not provided", ->
@@ -40,6 +49,13 @@ describe "Selectr", ->
       userWidth = 400
       @select.selectr width: userWidth
       expect(@select.next(".selectr-wrap").width()).toBe(userWidth)
+
+    describe "result list", ->
+      it "should create a result list from the data model", ->
+        expect(@select.next(".selectr-wrap").find(".selectr-results")).toExist()
+        expect(@select.next(".selectr-wrap").find(".selectr-results .selectr-item").length > 1).toBeTruthy()
+        expect($(@select.next(".selectr-wrap").find(".selectr-results .selectr-item").get(4))
+          .find("button").data("value")).toEqual(@select.data("selectr").data[4].value)
 
 #
 #    describe "wrapper & dropdown", ->

@@ -4,6 +4,7 @@ $.fn.extend
       $(this).data "selectr", new Selectr($(this), options)
 
 class Selectr
+
   constructor: (select, opts) ->
     @select = $(select)
     @settings = $.extend({}, @defaultSettings, opts)
@@ -12,49 +13,50 @@ class Selectr
 
   setup: ->
     @data = @createData()
-    @wrap = @createSelectrDOM()
+    @wrap = @createSelectrWrap()
+    @select.hide().after(@wrap)
 
   createData: -> ({
-    label: $(option).attr("label") || "", # is optgroup
-    text: $(option).text(),
-    value: $(option).val(),
-    disabled: $(option).is(':disabled'),
+    label: $(option).attr("label") || "" # is optgroup
+    text: $(option).text()
+    value: $(option).val()
+    disabled: $(option).is(':disabled')
     selected: $(option).is(':selected')
   } for option in @select.find("optgroup, option"))
 
+  createListItem: (row) ->
+    unless row.label is "" # is optgroup label
+      $("<li />", class: "selectr-label").text(row.label)
+    else
+      button = $("<button />", type: "button")
+        .data
+          value: row.value
+          selected: row.selected
+          disabled: row.disabled
+        .text row.text
+      li = $("<li />").append(button)
+      classNames = [
+        "selectr-item",
+        if row.value is "" then "selectr-hidden" else ""
+        if row.selected is "" then "selectr-selected" else ""
+        if row.disabled is "" then "selectr-disabled" else ""
+      ]
+      ((li.addClass(className) if className isnt "") for className in classNames)
+      return li
+
   createListFromData: (data) ->
     data = @data unless data
-    list = $("<ul class=\"selectr-results\"></ul>")
-    liHtml = ""
-    $(@data).each (i, row) ->
-      if row.label isnt "" # is optgroup label
-        liHtml += "<li class=\"selectr-label\">#{row.label}</li>"
-      else
-        liHtml += "<li id=\"selectr-item-#{i}\" class=\"selectr-item"
-        liHtml += " selectr-hidden" if row.value is ""
-        liHtml += " selectr-selected" if row.selected
-        liHtml += " selectr-disabled" if row.disabled
-        liHtml += "\">"
-        liHtml += """
-            <button type="button" data-value="#{row.value}"
-              data-selected="#{row.selected}" data-disabled="#{row.disabled}">
-                #{row.text}
-            </button>
-          </li>
-        """
-      return
-
-    list.append liHtml
-    return list
+    list = $("<ul />", class: "selectr-results")
+    lis = (@createListItem(row) for row in @data)
+    list.append lis
 
   getDefaultText: ->
-    # js setting > data attr > placeholder attr > "empty" option
-
+    # TODO: js setting > data attr > placeholder attr > "empty" option
     return "Hello!"
 
-  createSelectrDOM: ->
-    wrap = ($ "<div />", class: "selectr-wrap", width: @settings.width)
-    toggleBtn = ($ "<a />",
+  createSelectrWrap: ->
+    wrap = $("<div />", class: "selectr-wrap", width: @settings.width)
+    toggleBtn = $("<a />",
       class: "selectr-toggle", tabindex: @select.attr("tabindex") or -1)
     toggleBtn.append("<span>#{@getDefaultText()}</span><div><i></i></div>")
     searchInput = $("<input />",
@@ -76,7 +78,6 @@ class Selectr
       dropdownWrap.append searchInput, resultsList
       wrap.append toggleBtn, dropdownWrap
 
-    @select.hide().after(wrap)
     return wrap
 
   defaultSettings:
