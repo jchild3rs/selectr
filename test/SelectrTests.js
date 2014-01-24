@@ -45,6 +45,7 @@ describe("Selectr", function() {
   });
   return describe("UI setup", function() {
     beforeEach(function() {
+      this.originalTabIndex = this.select.attr('tabindex');
       return this.select.selectr();
     });
     it("should hide the original input", function() {
@@ -63,6 +64,10 @@ describe("Selectr", function() {
         width: userWidth
       });
       return expect(this.select.next(".selectr-wrap").width()).toBe(userWidth);
+    });
+    it("should apply -1 to select's tabindex and update wrap with select's tabindex", function() {
+      expect(this.select.attr("tabindex")).toBe("-1");
+      return expect(this.select.next(".selectr-wrap").find(".selectr-toggle").attr("tabindex")).toBe(this.originalTabIndex);
     });
     return describe("result list", function() {
       return it("should create a result list from the data model", function() {

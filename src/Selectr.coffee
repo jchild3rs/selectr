@@ -9,12 +9,91 @@ class Selectr
     @select = $(select)
     @settings = $.extend({}, @defaultSettings, opts)
     @settings.multiple = true if @select.attr "multiple"
+    @settings.tabindex = @select.attr "tabindex"
     @setup()
 
   setup: ->
     @data = @createData()
     @wrap = @createSelectrWrap()
     @select.hide().after(@wrap)
+    @select.attr("tabindex", "-1")
+    @bindEvents()
+
+  handleDocumentClick: (e) =>
+    if e.currentTarget is document and @wrap.find(".selectr-drop").is ":visible"
+      @hideAllDropDowns()
+      $(document).off("click", @handleDocumentClick)
+    e.preventDefault()
+    e.stopPropagation()
+
+  showDropDown: ->
+    @hideAllDropDowns()
+    drop = @wrap.find(".selectr-drop")
+    @wrap.addClass("selectr-open")
+    @focusSearchInput() unless @settings.multiple
+    drop.show()
+    $(document).on("click", @handleDocumentClick)
+
+  # Always hide all instances for now.
+  hideAllDropDowns: ->
+    if $(".selectr-open").length > 0
+      $(".selectr-open")
+        .removeClass("selectr-open")
+        .find(".selectr-drop").hide()
+
+  toggleDrop: (e) =>
+    drop = @wrap.find(".selectr-drop")
+    if @wrap.hasClass("selectr-open")
+      @hideAllDropDowns()
+    else
+      @showDropDown()
+    e.preventDefault()
+    e.stopPropagation()
+
+  focusSearchInput: =>
+    @wrap.find(".selectr-search").trigger("focus.selectr")
+
+  resultItemClick: (e) =>
+    e.stopPropagation()
+    e.preventDefault()
+
+  toggleBtnClick: (e) => @toggleDrop(e)
+  toggleBtnFocus: (e) =>
+    e.preventDefault()
+    e.stopPropagation()
+    unless @settings.multiple
+      @hideAllDropDowns()
+    else
+      @wrap.find(".selectr-search").focus()
+
+  searchInputFocus: (e) =>
+    @showDropDown() if @settings.multiple
+    e.preventDefault()
+    e.stopPropagation()
+
+  searchInputClick: (e) => 
+    e.preventDefault()
+    e.stopPropagation()
+
+  selectionWrapClick: (e) =>
+    @focusSearchInput()
+    e.preventDefault()
+    e.stopPropagation()
+
+
+  bindEvents: ->
+
+    @wrap.find(".selectr-toggle").on
+      "click.selectr": @toggleDrop
+      "focus.selectr": @toggleBtnFocus
+
+    @wrap.find(".selectr-drop").on "click", ".selectr-item", @resultItemClick
+
+    @wrap.find(".selectr-search").on
+      "focus.selectr": @searchInputFocus
+      "click.selectr": @searchInputClick
+
+    @wrap.find(".selectr-selections").on "click.selectr", @selectionWrapClick
 
   createData: -> ({
     label: $(option).attr("label") || "" # is optgroup
@@ -38,8 +117,8 @@ class Selectr
       classNames = [
         "selectr-item",
         if row.value is "" then "selectr-hidden" else ""
-        if row.selected is "" then "selectr-selected" else ""
-        if row.disabled is "" then "selectr-disabled" else ""
+        if row.selected then "selectr-selected" else ""
+        if row.disabled then "selectr-disabled" else ""
       ]
       ((li.addClass(className) if className isnt "") for className in classNames)
       return li
@@ -50,14 +129,23 @@ class Selectr
     lis = (@createListItem(row) for row in @data)
     list.append lis
 
+  # js setting > data attr > placeholder attr > "empty" option
   getDefaultText: ->
-    # TODO: js setting > data attr > placeholder attr > "empty" option
-    return "Hello!"
+    if @settings.placeholder
+      @settings.placeholder
+    else if @select.data "placeholder"
+      @select.data "placeholder"
+    else if @select.attr "placeholder"
+      @select.attr "placeholder"
+    else if @select.find("option:empty").text()
+      @select.find("option:empty").text()
+    else
+      "Select an option"
 
   createSelectrWrap: ->
     wrap = $("<div />", class: "selectr-wrap", width: @settings.width)
     toggleBtn = $("<a />",
-      class: "selectr-toggle", tabindex: @select.attr("tabindex") or -1)
+      class: "selectr-toggle", tabindex: @select.attr("tabindex") or "")
     toggleBtn.append("<span>#{@getDefaultText()}</span><div><i></i></div>")
     searchInput = $("<input />",
       class: "selectr-search", type: "text", autocomplete: "off")
@@ -65,8 +153,13 @@ class Selectr
     multiSelectWrap = $("<div />", class: "selectr-selections")
     selectionList = $("<ul />")
     searchWrap = $("<li />")
-    msSearchInput = $("<input />",
-      type: "text", class: "selectr-ms-search selectr-search", autocomplete: "off", placeholder: "")
+    msSearchInput = $ "<input />",
+      type: "text",
+      class: "selectr-ms-search selectr-search",
+      autocomplete: "off",
+      placeholder: ""
+      tabindex: @select.attr('tabindex')
+
 
     resultsList = @createListFromData()
 

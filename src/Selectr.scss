@@ -19,6 +19,9 @@ $icon-spacing: 5px;
   padding: 0;
   position: relative;
   &.selectr-open {
+    .selectr-drop {
+      z-index: 99999;
+    }
     .selectr-selections {
       border-bottom: 1px solid $border-color;
       ul {

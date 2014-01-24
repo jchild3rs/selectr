@@ -37,6 +37,7 @@ describe "Selectr", ->
 
   describe "UI setup", ->
     beforeEach ->
+      @originalTabIndex = @select.attr('tabindex')
       @select.selectr()
 
     it "should hide the original input", ->
@@ -49,6 +50,9 @@ describe "Selectr", ->
       userWidth = 400
       @select.selectr width: userWidth
       expect(@select.next(".selectr-wrap").width()).toBe(userWidth)
+    it "should apply -1 to select's tabindex and update wrap with select's tabindex", ->
+      expect(@select.attr("tabindex")).toBe("-1")
+      expect(@select.next(".selectr-wrap").find(".selectr-toggle").attr("tabindex")).toBe(@originalTabIndex)
 
     describe "result list", ->
       it "should create a result list from the data model", ->
