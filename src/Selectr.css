@@ -10,61 +10,61 @@
   width: 13px;
 }
 
-/* line 12, Selectr.scss */
+/* line 13, Selectr.scss */
 .icon-sprite, .icon-default, .selectr-toggle div i, .selectr-selections ul div i {
   display: inline-block;
 }
 
-/* line 16, Selectr.scss */
+/* line 17, Selectr.scss */
 .selectr-wrap {
   width: 100%;
   margin: 0;
   padding: 0;
   position: relative;
 }
-/* line 22, Selectr.scss */
+/* line 23, Selectr.scss */
 .selectr-wrap.selectr-open .selectr-drop {
   z-index: 99999;
 }
-/* line 25, Selectr.scss */
+/* line 26, Selectr.scss */
 .selectr-wrap.selectr-open .selectr-selections {
   border-bottom: 1px solid #aaaaaa;
 }
-/* line 27, Selectr.scss */
+/* line 28, Selectr.scss */
 .selectr-wrap.selectr-open .selectr-selections ul {
   background: #fdfdfd !important;
 }
-/* line 31, Selectr.scss */
+/* line 32, Selectr.scss */
 .selectr-wrap.selectr-open .selectr-toggle, .selectr-wrap.selectr-open .selectr-selections ul, .selectr-selections .selectr-wrap.selectr-open ul {
   cursor: default;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   border-bottom: 0;
-  -webkit-box-shadow: 0 4px 5px rgba(0, 0, 0, 0.2);
-  -moz-box-shadow: 0 4px 5px rgba(0, 0, 0, 0.2);
-  box-shadow: 0 4px 5px rgba(0, 0, 0, 0.2);
+  -webkit-box-shadow: 0 6px 5px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0 6px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 5px rgba(0, 0, 0, 0.2);
   background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(20%, #eeeeee), color-stop(80%, #fdfdfd));
   background-image: -webkit-linear-gradient(#eeeeee 20%, #fdfdfd 80%);
   background-image: -moz-linear-gradient(#eeeeee 20%, #fdfdfd 80%);
   background-image: -o-linear-gradient(#eeeeee 20%, #fdfdfd 80%);
   background-image: linear-gradient(#eeeeee 20%, #fdfdfd 80%);
 }
-/* line 38, Selectr.scss */
+/* line 39, Selectr.scss */
 .selectr-wrap.selectr-open .selectr-toggle span, .selectr-wrap.selectr-open .selectr-selections ul span, .selectr-selections .selectr-wrap.selectr-open ul span {
   border-top: 1px solid #fdfdfd;
   border-bottom: 1px solid #fdfdfd;
 }
-/* line 45, Selectr.scss */
+/* line 46, Selectr.scss */
 .selectr-wrap.selectr-multiple .selectr-item.selectr-selected {
   background: transparent;
 }
-/* line 47, Selectr.scss */
+/* line 48, Selectr.scss */
 .selectr-wrap.selectr-multiple .selectr-item.selectr-selected button {
   cursor: default;
   color: #aaa;
 }
 
-/* line 54, Selectr.scss */
+/* line 55, Selectr.scss */
 .selectr-results {
   width: 100%;
   -webkit-box-sizing: border-box;
@@ -79,23 +79,23 @@
   max-height: 240px;
   -webkit-overflow-scrolling: touch;
 }
-/* line 65, Selectr.scss */
+/* line 66, Selectr.scss */
 .selectr-results .selectr-label {
   padding: 6px;
   font-size: 12px;
   font-weight: bold;
   text-transform: uppercase;
 }
-/* line 72, Selectr.scss */
+/* line 73, Selectr.scss */
 .selectr-results.no-results .selectr-item {
   padding: 7px 6px;
 }
-/* line 74, Selectr.scss */
+/* line 75, Selectr.scss */
 .selectr-results.no-results .selectr-item:hover {
   background: transparent;
   color: #333;
 }
-/* line 80, Selectr.scss */
+/* line 81, Selectr.scss */
 .selectr-results .selectr-item {
   position: relative;
   width: 100%;
@@ -104,31 +104,31 @@
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
-/* line 85, Selectr.scss */
+/* line 86, Selectr.scss */
 .selectr-results .selectr-item:hover, .selectr-results .selectr-item.selectr-active {
   background: dodgerblue;
 }
-/* line 87, Selectr.scss */
+/* line 88, Selectr.scss */
 .selectr-results .selectr-item:hover button, .selectr-results .selectr-item.selectr-active button {
   color: #fff;
 }
-/* line 91, Selectr.scss */
+/* line 92, Selectr.scss */
 .selectr-results .selectr-item.selectr-disabled {
   background: transparent;
 }
-/* line 93, Selectr.scss */
+/* line 94, Selectr.scss */
 .selectr-results .selectr-item.selectr-disabled button {
   color: #aaa;
 }
-/* line 96, Selectr.scss */
+/* line 97, Selectr.scss */
 .selectr-results .selectr-item.selectr-disabled:hover {
   background: transparent;
 }
-/* line 98, Selectr.scss */
+/* line 99, Selectr.scss */
 .selectr-results .selectr-item.selectr-disabled:hover button {
   color: #aaa;
 }
-/* line 103, Selectr.scss */
+/* line 104, Selectr.scss */
 .selectr-results .selectr-item button {
   border: 0;
   background: none;
@@ -139,30 +139,30 @@
   text-align: left;
   cursor: pointer;
 }
-/* line 112, Selectr.scss */
+/* line 113, Selectr.scss */
 .selectr-results .selectr-item button:focus {
   outline: none;
 }
-/* line 115, Selectr.scss */
+/* line 116, Selectr.scss */
 .selectr-results .selectr-item button b {
   font-weight: bold;
   text-decoration: underline;
 }
-/* line 121, Selectr.scss */
+/* line 122, Selectr.scss */
 .selectr-results .selectr-item.selectr-disabled button {
   color: #aaa;
   cursor: default;
 }
 
-/* line 128, Selectr.scss */
+/* line 129, Selectr.scss */
 .selectr-drop {
   position: absolute;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-  -webkit-box-shadow: 0 4px 5px rgba(0, 0, 0, 0.2);
-  -moz-box-shadow: 0 4px 5px rgba(0, 0, 0, 0.2);
-  box-shadow: 0 4px 5px rgba(0, 0, 0, 0.2);
+  -webkit-box-shadow: 0 6px 5px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0 6px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 5px rgba(0, 0, 0, 0.2);
   width: 100%;
   padding: 3px;
   display: none;
@@ -173,12 +173,12 @@
   border-top-right-radius: 0;
   border-top: 0;
 }
-/* line 141, Selectr.scss */
+/* line 142, Selectr.scss */
 .selectr-drop .selectr-search {
   margin: 0 1% 3px;
 }
 
-/* line 145, Selectr.scss */
+/* line 146, Selectr.scss */
 .selectr-search {
   width: 98%;
   margin: 0;
@@ -189,12 +189,12 @@
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
-/* line 152, Selectr.scss */
+/* line 153, Selectr.scss */
 .selectr-search:focus {
   outline: none;
 }
 
-/* line 156, Selectr.scss */
+/* line 157, Selectr.scss */
 .selectr-toggle, .selectr-selections ul {
   background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(20%, #fdfdfd), color-stop(80%, #eeeeee));
   background-image: -webkit-linear-gradient(#fdfdfd 20%, #eeeeee 80%);
@@ -212,7 +212,7 @@
   border-radius: 3px;
   cursor: pointer;
 }
-/* line 167, Selectr.scss */
+/* line 171, Selectr.scss */
 .selectr-toggle span, .selectr-selections ul span {
   border-top: 1px solid #fdfdfd;
   border-bottom: 1px solid #eee;
@@ -226,7 +226,7 @@
   font-size: 12px;
   text-shadow: 1px 1px 1px #fff;
 }
-/* line 179, Selectr.scss */
+/* line 183, Selectr.scss */
 .selectr-toggle div, .selectr-selections ul div {
   position: absolute;
   right: 0;
@@ -234,7 +234,7 @@
   height: 100%;
   cursor: pointer;
 }
-/* line 185, Selectr.scss */
+/* line 189, Selectr.scss */
 .selectr-toggle div i, .selectr-selections ul div i {
   background-size: 100%;
   width: 7px;
@@ -244,18 +244,18 @@
   right: 8px;
 }
 
-/* line 198, Selectr.scss */
+/* line 202, Selectr.scss */
 .selectr-selections {
   margin: 0;
   padding: 0;
 }
-/* line 201, Selectr.scss */
+/* line 205, Selectr.scss */
 .selectr-selections ul, .selectr-selections li {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-/* line 206, Selectr.scss */
+/* line 210, Selectr.scss */
 .selectr-selections ul {
   *zoom: 1;
   background: transparent;
@@ -266,11 +266,11 @@
   display: table;
   clear: both;
 }
-/* line 211, Selectr.scss */
+/* line 215, Selectr.scss */
 .selectr-selections li {
   float: left;
 }
-/* line 214, Selectr.scss */
+/* line 218, Selectr.scss */
 .selectr-selections .selectr-ms-search {
   background: transparent;
   border: 0;
@@ -278,17 +278,17 @@
   width: 46%;
   min-width: 40px;
 }
-/* line 220, Selectr.scss */
+/* line 224, Selectr.scss */
 .selectr-selections .selectr-ms-search:focus {
   outline: none;
 }
 
-/* line 225, Selectr.scss */
+/* line 229, Selectr.scss */
 .selectr-hidden {
   display: none;
 }
 
-/* line 238, Selectr.scss */
+/* line 242, Selectr.scss */
 .selectr-pill button {
   background-color: #d7e5f5;
   background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #d7e5f5), color-stop(100%, #cbe0f5));
@@ -315,7 +315,7 @@
   text-align: center;
   text-shadow: 0 1px 1px #fff;
 }
-/* line 253, Selectr.scss */
+/* line 257, Selectr.scss */
 .selectr-pill button:hover {
   background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ccd9e8), color-stop(100%, #c1d4e8));
   background: -webkit-linear-gradient(top, #ccd9e8, #c1d4e8);
@@ -331,7 +331,7 @@
   color: #163659;
   cursor: pointer;
 }
-/* line 264, Selectr.scss */
+/* line 268, Selectr.scss */
 .selectr-pill button:active {
   border: 1px solid #8c98a7;
   -webkit-box-shadow: inset 0 0 4px 2px #abbccf, 0 0 1px 0 #eeeeee;

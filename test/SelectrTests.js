@@ -43,10 +43,15 @@ describe("Selectr", function() {
       return expect(this.select.data("selectr").data.length).toBe(this.select.find("option").length);
     });
   });
-  return describe("UI setup", function() {
+  describe("UI setup", function() {
+    var drop, wrap;
+    drop = null;
+    wrap = null;
     beforeEach(function() {
       this.originalTabIndex = this.select.attr('tabindex');
-      return this.select.selectr();
+      this.select.selectr();
+      wrap = this.select.next(".selectr-wrap");
+      return drop = this.select.next(".selectr-wrap").find(".selectr-drop");
     });
     it("should hide the original input", function() {
       return expect(this.select).toBeHidden();
@@ -69,12 +74,56 @@ describe("Selectr", function() {
       expect(this.select.attr("tabindex")).toBe("-1");
       return expect(this.select.next(".selectr-wrap").find(".selectr-toggle").attr("tabindex")).toBe(this.originalTabIndex);
     });
-    return describe("result list", function() {
-      return it("should create a result list from the data model", function() {
-        expect(this.select.next(".selectr-wrap").find(".selectr-results")).toExist();
-        expect(this.select.next(".selectr-wrap").find(".selectr-results .selectr-item").length > 1).toBeTruthy();
-        return expect($(this.select.next(".selectr-wrap").find(".selectr-results .selectr-item").get(4)).find("button").data("value")).toEqual(this.select.data("selectr").data[4].value);
-      });
+    it("should have a dropdown", function() {
+      return expect(drop).toExist();
+    });
+    it("should have a dropdown that is hidden by default", function() {
+      return expect(drop).toBeHidden();
+    });
+    it("should have a dropdown that should show when toggle is clicked", function() {
+      var toggle;
+      toggle = wrap.find(".selectr-toggle");
+      toggle.trigger("click.selectr");
+      return expect(drop).not.toBeHidden();
+    });
+    return it("should have the class `.selectr-open` when the toggle is clicked", function() {
+      var toggle;
+      toggle = wrap.find(".selectr-toggle");
+      expect(wrap).not.toHaveClass("selectr-open");
+      toggle.trigger("click.selectr");
+      return expect(wrap).toHaveClass("selectr-open");
+    });
+  });
+  describe("result list", function() {
+    it("should create a result list from the data model", function() {
+      this.select.selectr();
+      expect(this.select.next(".selectr-wrap").find(".selectr-results")).toExist();
+      expect(this.select.next(".selectr-wrap").find(".selectr-results .selectr-item").length > 1).toBeTruthy();
+      return expect($(this.select.next(".selectr-wrap").find(".selectr-results .selectr-item").get(4)).data("value")).toEqual(this.select.data("selectr").data[4].value);
+    });
+    return it("should have <option> data attached to each result item", function() {
+      var item;
+      this.select.selectr();
+      item = this.select.next(".selectr-wrap").find(".selectr-item");
+      expect(item).toExist();
+      expect(item.data()).not.toBeEmpty();
+      expect(item.data().value).toBeDefined();
+      expect(item.data().selected).toBeDefined();
+      return expect(item.data().disabled).toBeDefined();
+    });
+  });
+  return describe("item selection", function() {
+    return it("should populate the original input's value with the selected value", function() {
+      var drop, items, randomItem, wrap;
+      this.select.selectr();
+      wrap = this.select.next(".selectr-wrap");
+      wrap.find(".selectr-toggle").trigger("click.selectr");
+      drop = wrap.find(".selectr-drop");
+      expect(drop).toBeVisible();
+      items = drop.find(".selectr-item");
+      randomItem = items.get(Math.floor(Math.random() * items.length) + 1);
+      $(randomItem).trigger("click");
+      return expect(this.select.val()).toEqual($(randomItem).data("value"));
     });
   });
 });

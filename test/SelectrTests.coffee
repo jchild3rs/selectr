@@ -36,9 +36,13 @@ describe "Selectr", ->
       expect(@select.data("selectr").data.length).toBe(@select.find("option").length)
 
   describe "UI setup", ->
+    drop = null
+    wrap = null
     beforeEach ->
       @originalTabIndex = @select.attr('tabindex')
       @select.selectr()
+      wrap = @select.next(".selectr-wrap")
+      drop = @select.next(".selectr-wrap").find(".selectr-drop")
 
     it "should hide the original input", ->
       expect(@select).toBeHidden()
@@ -53,73 +57,55 @@ describe "Selectr", ->
     it "should apply -1 to select's tabindex and update wrap with select's tabindex", ->
       expect(@select.attr("tabindex")).toBe("-1")
       expect(@select.next(".selectr-wrap").find(".selectr-toggle").attr("tabindex")).toBe(@originalTabIndex)
+    it "should have a dropdown", ->
+      expect(drop).toExist()
 
-    describe "result list", ->
-      it "should create a result list from the data model", ->
-        expect(@select.next(".selectr-wrap").find(".selectr-results")).toExist()
-        expect(@select.next(".selectr-wrap").find(".selectr-results .selectr-item").length > 1).toBeTruthy()
-        expect($(@select.next(".selectr-wrap").find(".selectr-results .selectr-item").get(4))
-          .find("button").data("value")).toEqual(@select.data("selectr").data[4].value)
+    it "should have a dropdown that is hidden by default", ->
+      expect(drop).toBeHidden()
 
-#
-#    describe "wrapper & dropdown", ->
-#
-#      beforeEach ->
-#        @wrap = @select.siblings ".selectr-wrap"
-#        @drop = @wrap.find(".selectr-drop")
-#      afterEach ->
-#        @wrap = null
-#        @drop = null
-#
-#      it "should be a sibling to the original select", ->
-#        expect(@wrap).toExist()
-#
-#      it "should have the class \"selectr-wrap\"", ->
-#        expect(@wrap).toHaveClass "selectr-wrap"
-#
-#      it "should have a width based on settings", ->
-#        expect(@wrap.width()).toEqual($.fn.selectr.defaultOptions.width)
-#
-#      it "should have a width based on user-defined settings", ->
-#        wrap = $("#select-fixture").selectr({width: 500}).siblings(".selectr-wrap")
-#        expect(wrap.width()).not.toEqual($.fn.selectr.defaultOptions.width)
-#        expect(wrap.width()).toEqual(500)
-#        wrap = null
-#
-#      it "should have a certain html layout if default", ->
-#        expect(@wrap.find("> .selectr-toggle, > .selectr-search, > .selectr-drop")).toExist()
-#
-#      it "should have a dropdown", ->
-#        expect(@drop).toExist()
-#
-#      it "should have a dropdown that is hidden by default", ->
-#        expect(@drop).toBeHidden()
-#
-#      it "should have a dropdown that should show when toggle is clicked", ->
-#        toggle = @wrap.find(".selectr-toggle")
-#        toggle.trigger "click"
-#        expect(@drop).not.toBeHidden()
-#
-#      it "should have the class `.selectr-open` when the toggle is clicked", ->
-#        toggle = @wrap.find(".selectr-toggle")
-#        expect(@wrap).not.toHaveClass "selectr-open"
-#        toggle.trigger "click"
-#        expect(@wrap).toHaveClass "selectr-open"
-#
-#
-#    describe "results", ->
-#      # todo: add search tests
-#      it "should not show duplicates", ->
-#
-#
-#      it "should create a unordered list, within the wrapper, using the <select>'s data", ->
-#        # todo: handle duplicates. the test below works if there are no duplicates
-#        list = @select.next(".selectr-wrap").find(".selectr-results")
-##        matching indexes of the <option>s against the indexes of the <li>s that are generated.
-#        expect(@select.find("option")).toHaveLength(list.find("li").length)
-#        expect(@select.find("option").get(4).value).toEqual($(list.find("li").get(4)).find("button").text())
-#        expect(@select.find("option").get(7).value).toEqual($(list.find("li").get(7)).find("button").text())
-#        expect(@select.find("option").get(5).value).not.toEqual($(list.find("li").get(7)).find("button").text())
-#
-#
-#  # todo add arrow key tests
+    it "should have a dropdown that should show when toggle is clicked", ->
+      toggle = wrap.find(".selectr-toggle")
+      toggle.trigger "click.selectr"
+      expect(drop).not.toBeHidden()
+
+    it "should have the class `.selectr-open` when the toggle is clicked", ->
+      toggle = wrap.find(".selectr-toggle")
+      expect(wrap).not.toHaveClass "selectr-open"
+      toggle.trigger "click.selectr"
+      expect(wrap).toHaveClass "selectr-open"
+
+
+  describe "result list", ->
+    it "should create a result list from the data model", ->
+      @select.selectr()
+      expect(@select.next(".selectr-wrap").find(".selectr-results")).toExist()
+      expect(@select.next(".selectr-wrap").find(".selectr-results .selectr-item").length > 1).toBeTruthy()
+      expect($(@select.next(".selectr-wrap").find(".selectr-results .selectr-item").get(4))
+        .data("value")).toEqual(@select.data("selectr").data[4].value)
+
+    it "should have <option> data attached to each result item", ->
+      @select.selectr()
+      item = @select.next(".selectr-wrap").find(".selectr-item")
+      expect(item).toExist()
+      expect(item.data()).not.toBeEmpty()
+      expect(item.data().value).toBeDefined()
+      expect(item.data().selected).toBeDefined()
+      expect(item.data().disabled).toBeDefined()
+
+  describe "item selection", ->
+
+    it "should populate the original input's value with the selected value", ->
+      @select.selectr()
+      wrap = @select.next(".selectr-wrap")
+
+      wrap.find(".selectr-toggle").trigger("click.selectr")
+
+      drop = wrap.find(".selectr-drop")
+      expect(drop).toBeVisible()
+
+      items = drop.find(".selectr-item")
+      randomItem = items.get(Math.floor(Math.random() * items.length) + 1)
+      $(randomItem).trigger("click")
+
+      expect(@select.val()).toEqual($(randomItem).data("value"))
+

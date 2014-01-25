@@ -11,15 +11,17 @@
   });
 
   Selectr = (function() {
+    var isValidKeyCode;
+
     function Selectr(select, opts) {
+      this.searchKeyUp = __bind(this.searchKeyUp, this);
+      this.searchKeyDown = __bind(this.searchKeyDown, this);
       this.selectionWrapClick = __bind(this.selectionWrapClick, this);
       this.searchInputClick = __bind(this.searchInputClick, this);
       this.searchInputFocus = __bind(this.searchInputFocus, this);
-      this.toggleBtnFocus = __bind(this.toggleBtnFocus, this);
       this.toggleBtnClick = __bind(this.toggleBtnClick, this);
       this.resultItemClick = __bind(this.resultItemClick, this);
       this.focusSearchInput = __bind(this.focusSearchInput, this);
-      this.toggleDrop = __bind(this.toggleDrop, this);
       this.handleDocumentClick = __bind(this.handleDocumentClick, this);
       this.select = $(select);
       this.settings = $.extend({}, this.defaultSettings, opts);
@@ -33,30 +35,25 @@
     Selectr.prototype.setup = function() {
       this.data = this.createData();
       this.wrap = this.createSelectrWrap();
-      this.select.hide().after(this.wrap);
-      this.select.attr("tabindex", "-1");
       return this.bindEvents();
     };
 
     Selectr.prototype.handleDocumentClick = function(e) {
       if (e.currentTarget === document && this.wrap.find(".selectr-drop").is(":visible")) {
         this.hideAllDropDowns();
-        $(document).off("click", this.handleDocumentClick);
+        $(document).off("click.selectr", this.handleDocumentClick);
       }
       e.preventDefault();
       return e.stopPropagation();
     };
 
     Selectr.prototype.showDropDown = function() {
-      var drop;
-      this.hideAllDropDowns();
-      drop = this.wrap.find(".selectr-drop");
       this.wrap.addClass("selectr-open");
       if (!this.settings.multiple) {
         this.focusSearchInput();
       }
-      drop.show();
-      return $(document).on("click", this.handleDocumentClick);
+      this.wrap.find(".selectr-drop").show();
+      return $(document).on("click.selectr", this.handleDocumentClick);
     };
 
     Selectr.prototype.hideAllDropDowns = function() {
@@ -65,16 +62,10 @@
       }
     };
 
-    Selectr.prototype.toggleDrop = function(e) {
-      var drop;
-      drop = this.wrap.find(".selectr-drop");
-      if (this.wrap.hasClass("selectr-open")) {
-        this.hideAllDropDowns();
-      } else {
-        this.showDropDown();
-      }
-      e.preventDefault();
-      return e.stopPropagation();
+    Selectr.prototype.resetDropDown = function() {
+      var newResultsList;
+      newResultsList = this.createListFromData(this.data);
+      return this.wrap.find(".selectr-results").replaceWith(newResultsList);
     };
 
     Selectr.prototype.focusSearchInput = function() {
@@ -82,22 +73,20 @@
     };
 
     Selectr.prototype.resultItemClick = function(e) {
+      this.wrap.find(".selectr-active").removeClass("selectr-active");
+      $(e.currentTarget).addClass("selectr-active");
+      this.makeSelection();
       e.stopPropagation();
       return e.preventDefault();
     };
 
     Selectr.prototype.toggleBtnClick = function(e) {
-      return this.toggleDrop(e);
-    };
-
-    Selectr.prototype.toggleBtnFocus = function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!this.settings.multiple) {
-        return this.hideAllDropDowns();
-      } else {
-        return this.wrap.find(".selectr-search").focus();
+      if (!this.wrap.find(".selectr-drop").is(":visible")) {
+        this.showDropDown();
+        this.focusSearchInput();
       }
+      e.stopPropagation();
+      return e.preventDefault();
     };
 
     Selectr.prototype.searchInputFocus = function(e) {
@@ -121,15 +110,155 @@
 
     Selectr.prototype.bindEvents = function() {
       this.wrap.find(".selectr-toggle").on({
-        "click.selectr": this.toggleDrop,
-        "focus.selectr": this.toggleBtnFocus
+        "click.selectr": this.toggleBtnClick
       });
-      this.wrap.find(".selectr-drop").on("click", ".selectr-item", this.resultItemClick);
+      this.wrap.find(".selectr-drop").on("click.selectr", ".selectr-item", this.resultItemClick);
       this.wrap.find(".selectr-search").on({
         "focus.selectr": this.searchInputFocus,
-        "click.selectr": this.searchInputClick
+        "click.selectr": this.searchInputClick,
+        "keyup.selectr": this.searchKeyUp,
+        "keydown.selectr": this.searchKeyDown
       });
       return this.wrap.find(".selectr-selections").on("click.selectr", this.selectionWrapClick);
+    };
+
+    Selectr.prototype.findMatches = function(item, query) {
+      var match;
+      if (item.text != null) {
+        match = item.text.match(new RegExp(query, "ig"));
+        if (match != null) {
+          match = match.length === 1 ? match[0] : match;
+          return {
+            label: item.label,
+            text: item.text.replace(match, "<b>" + match + "</b>"),
+            value: item.value,
+            selected: item.selected,
+            disabled: item.disabled
+          };
+        }
+      }
+    };
+
+    Selectr.prototype.searchDataModel = function(query) {
+      var item, _i, _len, _ref, _results;
+      _ref = this.data;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        if (item.text.match(new RegExp(query, "ig"))) {
+          _results.push(this.findMatches(item, query));
+        }
+      }
+      return _results;
+    };
+
+    Selectr.prototype.showNoResults = function(query) {
+      return this.wrap.find(".selectr-results").replaceWith("<ul class='selectr-results no-results'>\n  <li class='selectr-item'>No results found for <b>" + query + "</b></li>\n</ul>");
+    };
+
+    Selectr.prototype.searchKeyDown = function(e) {
+      var currentScrollTop, drop, gutter, hasSelection, next, offset, prev, query, resultList, selected, selectedHeight, stroke;
+      stroke = e.which || e.keyCode;
+      query = e.currentTarget.value;
+      selected = this.wrap.find(".selectr-active");
+      hasSelection = selected.length !== 0;
+      drop = this.wrap.find(".selectr-drop");
+      resultList = this.wrap.find(".selectr-results");
+      switch (stroke) {
+        case 38:
+          if (hasSelection && selected.index() !== 0) {
+            prev = selected.prevAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
+            selected.removeClass("selectr-active");
+            prev.addClass("selectr-active");
+            currentScrollTop = resultList.scrollTop() + resultList.height();
+            selectedHeight = (selected.index() - 1) * selected.height();
+            offset = currentScrollTop - (resultList.height() - selected.height());
+            if (offset > selectedHeight) {
+              resultList.scrollTop(resultList.scrollTop() + selectedHeight - offset);
+            }
+          }
+          e.preventDefault();
+          break;
+        case 40:
+          if (!hasSelection) {
+            this.wrap.find(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
+          } else {
+            next = selected.nextAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
+            if (next.length === 0) {
+              break;
+            } else {
+              gutter = this.settings.multiple ? 2 : 1;
+              selected.removeClass("selectr-active");
+              next.addClass("selectr-active");
+              currentScrollTop = resultList.scrollTop() + resultList.height();
+              selectedHeight = (selected.index() + gutter) * selected.height();
+              offset = selectedHeight - currentScrollTop;
+              if (selectedHeight > currentScrollTop) {
+                resultList.scrollTop(resultList.scrollTop() + offset);
+              }
+            }
+          }
+          e.preventDefault();
+          break;
+        case 13:
+          if (hasSelection) {
+            this.makeSelection();
+            this.wrap.find(".selectr-search").val("");
+            this.resetDropDown();
+            break;
+          }
+          break;
+        case 8:
+          if (this.settings.multiple && query.length === 0 && this.wrap.find(".selectr-pill").length > 0) {
+            e.preventDefault();
+          }
+          break;
+        default:
+          break;
+      }
+      return this;
+    };
+
+    Selectr.prototype.makeSelection = function() {
+      var selectedItem;
+      selectedItem = this.wrap.find(".selectr-active");
+      if (!this.settings.multiple) {
+        this.wrap.find(".selectr-toggle span").text(selectedItem.text());
+        this.wrap.prev("select").val(selectedItem.data("value"));
+        if (this.wrap.find(".selectr-drop").is(":visible")) {
+          return this.hideAllDropDowns();
+        }
+      } else {
+
+      }
+    };
+
+    Selectr.prototype.searchKeyUp = function(e) {
+      var newResultsList, query, resultContainer, resultData, stroke;
+      stroke = e.which || e.keyCode;
+      if (isValidKeyCode(stroke)) {
+        query = e.currentTarget.value;
+        resultContainer = this.wrap.find(".selectr-results");
+        if (query.length > 0) {
+          resultData = this.searchDataModel(query);
+          if (resultData.length > 0) {
+            newResultsList = this.createListFromData(resultData);
+            resultContainer.replaceWith(newResultsList.get(0).outerHTML);
+          } else {
+            this.showNoResults(query);
+          }
+          this.wrap.find(".selectr-label").hide();
+          this.wrap.find(".selectr-label ~ .selectr-item:visible").prev().show();
+          if (!this.wrap.find(".selectr-drop").is(":visible")) {
+            this.showDropDown();
+          }
+        } else {
+          this.resetDropDown();
+        }
+        if (!this.wrap.find(".selectr-drop").is(":visible")) {
+          return this.showDropDown();
+        }
+      }
     };
 
     Selectr.prototype.createData = function() {
@@ -152,18 +281,18 @@
     Selectr.prototype.createListItem = function(row) {
       var button, className, classNames, li, _i, _len;
       if (row.label !== "") {
-        return $("<li />", {
+        li = $("<li />", {
           "class": "selectr-label"
         }).text(row.label);
       } else {
         button = $("<button />", {
           type: "button"
-        }).data({
+        }).html(row.text);
+        li = $("<li />").append(button).data({
           value: row.value,
           selected: row.selected,
           disabled: row.disabled
-        }).text(row.text);
-        li = $("<li />").append(button);
+        });
         classNames = ["selectr-item", row.value === "" ? "selectr-hidden" : "", row.selected ? "selectr-selected" : "", row.disabled ? "selectr-disabled" : ""];
         for (_i = 0, _len = classNames.length; _i < _len; _i++) {
           className = classNames[_i];
@@ -171,29 +300,34 @@
             li.addClass(className);
           }
         }
-        return li;
       }
+      return li;
     };
 
     Selectr.prototype.createListFromData = function(data) {
       var lis, list, row;
-      if (!data) {
-        data = this.data;
-      }
       list = $("<ul />", {
         "class": "selectr-results"
       });
       lis = (function() {
-        var _i, _len, _ref, _results;
-        _ref = this.data;
+        var _i, _len, _results;
         _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          row = _ref[_i];
+        for (_i = 0, _len = data.length; _i < _len; _i++) {
+          row = data[_i];
           _results.push(this.createListItem(row));
         }
         return _results;
       }).call(this);
-      return list.append(lis);
+      list.append(lis);
+      return list;
+    };
+
+    Selectr.prototype.setDefaultText = function(text) {
+      if (this.settings.multiple) {
+        return this.wrap.find(".selectr-search").attr("placeholder", text);
+      } else {
+        return this.wrap.find(".selectr-toggle span").text(text);
+      }
     };
 
     Selectr.prototype.getDefaultText = function() {
@@ -238,10 +372,11 @@
         type: "text",
         "class": "selectr-ms-search selectr-search",
         autocomplete: "off",
-        placeholder: "",
-        tabindex: this.select.attr('tabindex')
+        placeholder: this.getDefaultText(),
+        tabindex: this.select.attr('tabindex'),
+        width: this.settings.width - 20
       });
-      resultsList = this.createListFromData();
+      resultsList = this.createListFromData(this.data);
       if (this.settings.multiple) {
         multiSelectWrap.append(selectionList.append(searchWrap.append(msSearchInput)));
         dropdownWrap.append(resultsList);
@@ -250,7 +385,21 @@
         dropdownWrap.append(searchInput, resultsList);
         wrap.append(toggleBtn, dropdownWrap);
       }
+      this.select.hide().after(wrap).attr("tabindex", "-1");
       return wrap;
+    };
+
+    isValidKeyCode = function(code) {
+      var backspaceOrDelete, isntEnterOrReturn, isntUpOrDown, space, validAlpha, validMath, validNumber, validPunc;
+      validAlpha = code >= 65 && code <= 90;
+      validNumber = code >= 48 && code <= 57;
+      validPunc = (code >= 185 && code <= 192) || (code >= 219 && code <= 222) && code !== 220;
+      validMath = code >= 106 && code <= 111;
+      space = code === 32;
+      isntUpOrDown = code !== 38 && code !== 40;
+      isntEnterOrReturn = code !== 13;
+      backspaceOrDelete = code === 8 || code === 46;
+      return isntUpOrDown && isntEnterOrReturn && (validAlpha || validNumber || validPunc || validMath || space || backspaceOrDelete);
     };
 
     Selectr.prototype.defaultSettings = {
