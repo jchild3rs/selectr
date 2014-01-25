@@ -1,7 +1,6 @@
 $.fn.extend
   selectr: (options) ->
-    this.each ->
-      $(this).data "selectr", new Selectr($(this), options)
+    this.each -> $(this).data "selectr", new Selectr($(this), options)
 
 class Selectr
 
@@ -25,6 +24,7 @@ class Selectr
     e.stopPropagation()
 
   showDropDown: ->
+    @hideAllDropDowns()
     @wrap.addClass("selectr-open")
     @focusSearchInput() unless @settings.multiple
     @wrap.find(".selectr-drop").show()
@@ -57,13 +57,13 @@ class Selectr
       @focusSearchInput()
     e.stopPropagation()
     e.preventDefault()
-    
+
   searchInputFocus: (e) =>
     @showDropDown() if @settings.multiple
     e.preventDefault()
     e.stopPropagation()
 
-  searchInputClick: (e) => 
+  searchInputClick: (e) =>
     e.preventDefault()
     e.stopPropagation()
 
@@ -72,20 +72,14 @@ class Selectr
     e.preventDefault()
     e.stopPropagation()
 
-
   bindEvents: ->
-
-    @wrap.find(".selectr-toggle").on
-      "click.selectr": @toggleBtnClick
-
+    @wrap.find(".selectr-toggle").on "click.selectr", @toggleBtnClick
     @wrap.find(".selectr-drop").on "click.selectr", ".selectr-item", @resultItemClick
-
     @wrap.find(".selectr-search").on
       "focus.selectr": @searchInputFocus
       "click.selectr": @searchInputClick
       "keyup.selectr": @searchKeyUp
       "keydown.selectr": @searchKeyDown
-
     @wrap.find(".selectr-selections").on "click.selectr", @selectionWrapClick
 
   findMatches: (item, query) ->
@@ -174,15 +168,61 @@ class Selectr
 
     return this
 
+  addSelection: ->
+    selectedItem = @wrap.find(".selectr-item.selectr-active")
+    return if selectedItem.hasClass("selectr-selected")
+
+    val = selectedItem.data("value")
+
+    selectedItem.addClass("selectr-selected")
+#    wrap.find(".selectr-results").scrollTop(0)
+
+    pill = @createSelection(
+      selectedItem.text(),
+      val,
+      selectedItem.data('selected'),
+      selectedItem.data('disabled')
+    )
+    search = @wrap.find(".selectr-ms-search")
+    search.parent("li").before pill
+
+    @_setSelectValue(val)
+    # update data model
+
+    search.focus()
+
+#    scaleSearchField(wrap.find(".selectr-ms-search"))
+
+  _setSelectValue: (val) ->
+    match = false
+    # update <select>
+    @select.find("option").each (i, option) ->
+      if $(option).val() is val and not match
+        $(option).prop("selected", true)
+        match = true
+    # update data model
+    item.selected = true for item in @data when item.value is val
+#    $(@data).each (i, item) -> item.selected = true if item.value is val
+    return this
+
+  _getSelectValue: ->
+    @select.val()
+    return this
+
+  removeSelection: ->
+  createSelection: (text, value, selected, disabled) ->
+    return $("<li/>", class: "selectr-pill")
+      .data(value: value, selected: selected, disabled: disabled)
+      .append("<button>#{text}</button>")
 
   makeSelection: ->
     selectedItem = @wrap.find(".selectr-active")
-    unless @settings.multiple
-      @wrap.find(".selectr-toggle span").text selectedItem.text()
-      @wrap.prev("select").val(selectedItem.data("value"))
-      @hideAllDropDowns() if @wrap.find(".selectr-drop").is ":visible"
+    if @settings.multiple
+      @addSelection()
     else
-#        addMultiSelection(selectedItem)
+      @wrap.find(".selectr-toggle span").text selectedItem.text()
+      @_setSelectValue(selectedItem.data("value"))
+      @hideAllDropDowns() if @wrap.find(".selectr-drop").is ":visible"
 
   searchKeyUp: (e) =>
     stroke = e.which || e.keyCode
@@ -198,7 +238,6 @@ class Selectr
           resultContainer.replaceWith(newResultsList.get(0).outerHTML)
         else
           @showNoResults(query)
-
 
         # Right now all optgroup labels are added to the data model.
         # this CSS will hide all labels that dont have a .selectr-item sibling.
@@ -245,7 +284,6 @@ class Selectr
     return li
 
   createListFromData: (data) ->
-#    data = @data unless data
     list = $("<ul />", class: "selectr-results")
     lis = (@createListItem(row) for row in data)
     list.append lis

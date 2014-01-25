@@ -48,6 +48,7 @@
     };
 
     Selectr.prototype.showDropDown = function() {
+      this.hideAllDropDowns();
       this.wrap.addClass("selectr-open");
       if (!this.settings.multiple) {
         this.focusSearchInput();
@@ -109,9 +110,7 @@
     };
 
     Selectr.prototype.bindEvents = function() {
-      this.wrap.find(".selectr-toggle").on({
-        "click.selectr": this.toggleBtnClick
-      });
+      this.wrap.find(".selectr-toggle").on("click.selectr", this.toggleBtnClick);
       this.wrap.find(".selectr-drop").on("click.selectr", ".selectr-item", this.resultItemClick);
       this.wrap.find(".selectr-search").on({
         "focus.selectr": this.searchInputFocus,
@@ -219,17 +218,68 @@
       return this;
     };
 
+    Selectr.prototype.addSelection = function() {
+      var pill, search, selectedItem, val;
+      selectedItem = this.wrap.find(".selectr-item.selectr-active");
+      if (selectedItem.hasClass("selectr-selected")) {
+        return;
+      }
+      val = selectedItem.data("value");
+      selectedItem.addClass("selectr-selected");
+      pill = this.createSelection(selectedItem.text(), val, selectedItem.data('selected'), selectedItem.data('disabled'));
+      search = this.wrap.find(".selectr-ms-search");
+      search.parent("li").before(pill);
+      this._setSelectValue(val);
+      return search.focus();
+    };
+
+    Selectr.prototype._setSelectValue = function(val) {
+      var item, match, _i, _len, _ref;
+      match = false;
+      this.select.find("option").each(function(i, option) {
+        if ($(option).val() === val && !match) {
+          $(option).prop("selected", true);
+          return match = true;
+        }
+      });
+      _ref = this.data;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        if (item.value === val) {
+          item.selected = true;
+        }
+      }
+      return this;
+    };
+
+    Selectr.prototype._getSelectValue = function() {
+      this.select.val();
+      return this;
+    };
+
+    Selectr.prototype.removeSelection = function() {};
+
+    Selectr.prototype.createSelection = function(text, value, selected, disabled) {
+      return $("<li/>", {
+        "class": "selectr-pill"
+      }).data({
+        value: value,
+        selected: selected,
+        disabled: disabled
+      }).append("<button>" + text + "</button>");
+    };
+
     Selectr.prototype.makeSelection = function() {
       var selectedItem;
       selectedItem = this.wrap.find(".selectr-active");
-      if (!this.settings.multiple) {
+      if (this.settings.multiple) {
+        return this.addSelection();
+      } else {
         this.wrap.find(".selectr-toggle span").text(selectedItem.text());
-        this.wrap.prev("select").val(selectedItem.data("value"));
+        this._setSelectValue(selectedItem.data("value"));
         if (this.wrap.find(".selectr-drop").is(":visible")) {
           return this.hideAllDropDowns();
         }
-      } else {
-
       }
     };
 
