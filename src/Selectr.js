@@ -13,46 +13,45 @@
   Selectr = (function() {
     var isValidKeyCode;
 
+    Selectr.prototype.defaultSettings = {
+      width: 250,
+      height: 200,
+      multiple: false,
+      onResultSelect: function() {}
+    };
+
     function Selectr(select, opts) {
-      this.searchKeyUp = __bind(this.searchKeyUp, this);
-      this.searchKeyDown = __bind(this.searchKeyDown, this);
+      this.select = select;
       this.selectionWrapClick = __bind(this.selectionWrapClick, this);
+      this.searchInputKeyUp = __bind(this.searchInputKeyUp, this);
+      this.searchInputKeyDown = __bind(this.searchInputKeyDown, this);
       this.searchInputClick = __bind(this.searchInputClick, this);
       this.searchInputFocus = __bind(this.searchInputFocus, this);
+      this.toggleBtnKeyDown = __bind(this.toggleBtnKeyDown, this);
       this.toggleBtnClick = __bind(this.toggleBtnClick, this);
       this.resultItemClick = __bind(this.resultItemClick, this);
       this.focusSearchInput = __bind(this.focusSearchInput, this);
       this.handleDocumentClick = __bind(this.handleDocumentClick, this);
-      this.select = $(select);
-      this.settings = $.extend({}, this.defaultSettings, opts);
-      if (this.select.attr("multiple")) {
-        this.settings.multiple = true;
-      }
-      this.settings.tabindex = this.select.attr("tabindex");
-      this.setup();
+      this.selectionItemClick = __bind(this.selectionItemClick, this);
+      this.settings = this.constructSettings(opts);
+      this.originalData = this.data = this.createData();
+      this.wrap = this.createSelectrWrap();
+      this.bindEvents();
     }
 
-    Selectr.prototype.setup = function() {
-      this.data = this.createData();
-      this.wrap = this.createSelectrWrap();
-      return this.bindEvents();
-    };
-
-    Selectr.prototype.handleDocumentClick = function(e) {
-      if (e.currentTarget === document && this.wrap.find(".selectr-drop").is(":visible")) {
-        this.hideAllDropDowns();
-        $(document).off("click.selectr", this.handleDocumentClick);
+    Selectr.prototype.constructSettings = function(providedOpts) {
+      var settings;
+      settings = $.extend({}, this.defaultSettings, providedOpts);
+      if (this.select.attr("multiple")) {
+        settings.multiple = true;
       }
-      e.preventDefault();
-      return e.stopPropagation();
+      settings.tabindex = this.select.attr("tabindex");
+      return settings;
     };
 
     Selectr.prototype.showDropDown = function() {
       this.hideAllDropDowns();
       this.wrap.addClass("selectr-open");
-      if (!this.settings.multiple) {
-        this.focusSearchInput();
-      }
       this.wrap.find(".selectr-drop").show();
       return $(document).on("click.selectr", this.handleDocumentClick);
     };
@@ -65,8 +64,38 @@
 
     Selectr.prototype.resetDropDown = function() {
       var newResultsList;
-      newResultsList = this.createListFromData(this.data);
+      newResultsList = this.createListFromData(this.originalData);
       return this.wrap.find(".selectr-results").replaceWith(newResultsList);
+    };
+
+    Selectr.prototype.bindEvents = function() {
+      this.wrap.find(".selectr-toggle").on({
+        "click.selectr": this.toggleBtnClick,
+        "keydown.selectr": this.toggleBtnKeyDown
+      });
+      this.wrap.find(".selectr-drop").on("click.selectr", ".selectr-item", this.resultItemClick);
+      this.wrap.find(".selectr-search").on({
+        "focus.selectr": this.searchInputFocus,
+        "click.selectr": this.searchInputClick,
+        "keyup.selectr": this.searchInputKeyUp,
+        "keydown.selectr": this.searchInputKeyDown
+      });
+      return this.wrap.find(".selectr-selections").on("click.selectr", this.selectionWrapClick).on("click.selectr", ".selectr-pill", this.selectionItemClick);
+    };
+
+    Selectr.prototype.selectionItemClick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      return this.removeSelection($(e.currentTarget));
+    };
+
+    Selectr.prototype.handleDocumentClick = function(e) {
+      if (e.currentTarget === document && this.wrap.find(".selectr-drop").is(":visible")) {
+        this.hideAllDropDowns();
+        $(document).off("click.selectr", this.handleDocumentClick);
+      }
+      e.preventDefault();
+      return e.stopPropagation();
     };
 
     Selectr.prototype.focusSearchInput = function() {
@@ -85,9 +114,20 @@
       if (!this.wrap.find(".selectr-drop").is(":visible")) {
         this.showDropDown();
         this.focusSearchInput();
+      } else {
+        this.hideAllDropDowns();
       }
       e.stopPropagation();
       return e.preventDefault();
+    };
+
+    Selectr.prototype.toggleBtnKeyDown = function(e) {
+      var stroke;
+      stroke = e.which || e.keyCode;
+      if (stroke === 40 || stroke === 13) {
+        this.showDropDown();
+        return this.focusSearchInput();
+      }
     };
 
     Selectr.prototype.searchInputFocus = function(e) {
@@ -103,67 +143,26 @@
       return e.stopPropagation();
     };
 
-    Selectr.prototype.selectionWrapClick = function(e) {
-      this.focusSearchInput();
-      e.preventDefault();
-      return e.stopPropagation();
-    };
-
-    Selectr.prototype.bindEvents = function() {
-      this.wrap.find(".selectr-toggle").on("click.selectr", this.toggleBtnClick);
-      this.wrap.find(".selectr-drop").on("click.selectr", ".selectr-item", this.resultItemClick);
-      this.wrap.find(".selectr-search").on({
-        "focus.selectr": this.searchInputFocus,
-        "click.selectr": this.searchInputClick,
-        "keyup.selectr": this.searchKeyUp,
-        "keydown.selectr": this.searchKeyDown
-      });
-      return this.wrap.find(".selectr-selections").on("click.selectr", this.selectionWrapClick);
-    };
-
-    Selectr.prototype.findMatches = function(item, query) {
-      var match;
-      if (item.text != null) {
-        match = item.text.match(new RegExp(query, "ig"));
-        if (match != null) {
-          match = match.length === 1 ? match[0] : match;
-          return {
-            label: item.label,
-            text: item.text.replace(match, "<b>" + match + "</b>"),
-            value: item.value,
-            selected: item.selected,
-            disabled: item.disabled
-          };
-        }
-      }
-    };
-
-    Selectr.prototype.searchDataModel = function(query) {
-      var item, _i, _len, _ref, _results;
-      _ref = this.data;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        item = _ref[_i];
-        if (item.text.match(new RegExp(query, "ig"))) {
-          _results.push(this.findMatches(item, query));
-        }
-      }
-      return _results;
-    };
-
-    Selectr.prototype.showNoResults = function(query) {
-      return this.wrap.find(".selectr-results").replaceWith("<ul class='selectr-results no-results'>\n  <li class='selectr-item'>No results found for <b>" + query + "</b></li>\n</ul>");
-    };
-
-    Selectr.prototype.searchKeyDown = function(e) {
-      var currentScrollTop, drop, gutter, hasSelection, next, offset, prev, query, resultList, selected, selectedHeight, stroke;
+    Selectr.prototype.searchInputKeyDown = function(e) {
+      var currentScrollTop, drop, gutter, hasSelection, next, offset, prev, query, resultList, selected, selectedHeight, stroke, toggleBtn;
       stroke = e.which || e.keyCode;
       query = e.currentTarget.value;
       selected = this.wrap.find(".selectr-active");
       hasSelection = selected.length !== 0;
       drop = this.wrap.find(".selectr-drop");
       resultList = this.wrap.find(".selectr-results");
+      toggleBtn = this.wrap.find(".selectr-toggle");
       switch (stroke) {
+        case 9:
+          if (this.wrap.find(".selectr-drop").is(":visible")) {
+            this.hideAllDropDowns();
+            toggleBtn.focus();
+          }
+          break;
+        case 27:
+          this.hideAllDropDowns();
+          toggleBtn.focus();
+          break;
         case 38:
           if (hasSelection && selected.index() !== 0) {
             prev = selected.prevAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
@@ -218,72 +217,7 @@
       return this;
     };
 
-    Selectr.prototype.addSelection = function() {
-      var pill, search, selectedItem, val;
-      selectedItem = this.wrap.find(".selectr-item.selectr-active");
-      if (selectedItem.hasClass("selectr-selected")) {
-        return;
-      }
-      val = selectedItem.data("value");
-      selectedItem.addClass("selectr-selected");
-      pill = this.createSelection(selectedItem.text(), val, selectedItem.data('selected'), selectedItem.data('disabled'));
-      search = this.wrap.find(".selectr-ms-search");
-      search.parent("li").before(pill);
-      this._setSelectValue(val);
-      return search.focus();
-    };
-
-    Selectr.prototype._setSelectValue = function(val) {
-      var item, match, _i, _len, _ref;
-      match = false;
-      this.select.find("option").each(function(i, option) {
-        if ($(option).val() === val && !match) {
-          $(option).prop("selected", true);
-          return match = true;
-        }
-      });
-      _ref = this.data;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        item = _ref[_i];
-        if (item.value === val) {
-          item.selected = true;
-        }
-      }
-      return this;
-    };
-
-    Selectr.prototype._getSelectValue = function() {
-      this.select.val();
-      return this;
-    };
-
-    Selectr.prototype.removeSelection = function() {};
-
-    Selectr.prototype.createSelection = function(text, value, selected, disabled) {
-      return $("<li/>", {
-        "class": "selectr-pill"
-      }).data({
-        value: value,
-        selected: selected,
-        disabled: disabled
-      }).append("<button>" + text + "</button>");
-    };
-
-    Selectr.prototype.makeSelection = function() {
-      var selectedItem;
-      selectedItem = this.wrap.find(".selectr-active");
-      if (this.settings.multiple) {
-        return this.addSelection();
-      } else {
-        this.wrap.find(".selectr-toggle span").text(selectedItem.text());
-        this._setSelectValue(selectedItem.data("value"));
-        if (this.wrap.find(".selectr-drop").is(":visible")) {
-          return this.hideAllDropDowns();
-        }
-      }
-    };
-
-    Selectr.prototype.searchKeyUp = function(e) {
+    Selectr.prototype.searchInputKeyUp = function(e) {
       var newResultsList, query, resultContainer, resultData, stroke;
       stroke = e.which || e.keyCode;
       if (isValidKeyCode(stroke)) {
@@ -311,6 +245,20 @@
       }
     };
 
+    /*
+    If multiple, we want to focus the input when the user
+    clicks on the wrap. The input will have a variable width.
+    */
+
+
+    Selectr.prototype.selectionWrapClick = function(e) {
+      if (this.settings.multiple) {
+        this.focusSearchInput();
+        e.preventDefault();
+        return e.stopPropagation();
+      }
+    };
+
     Selectr.prototype.createData = function() {
       var option, _i, _len, _ref, _results;
       _ref = this.select.find("optgroup, option");
@@ -326,6 +274,108 @@
         });
       }
       return _results;
+    };
+
+    Selectr.prototype.findMatchesInItem = function(item, query) {
+      var match;
+      if (item.text != null) {
+        match = item.text.match(new RegExp(query, "ig"));
+        if (match != null) {
+          match = match.length === 1 ? match[0] : match;
+          return {
+            label: item.label,
+            text: item.text.replace(match, "<b>" + match + "</b>"),
+            value: item.value,
+            selected: item.selected,
+            disabled: item.disabled
+          };
+        }
+      }
+    };
+
+    Selectr.prototype.searchDataModel = function(query) {
+      var item, _i, _len, _ref, _results;
+      _ref = this.data;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        if (item.text.match(new RegExp(query, "ig"))) {
+          _results.push(this.findMatchesInItem(item, query));
+        }
+      }
+      return _results;
+    };
+
+    Selectr.prototype.makeSelection = function() {
+      var selectedItem;
+      selectedItem = this.wrap.find(".selectr-active");
+      if (this.settings.multiple) {
+        return this.addSelection();
+      } else {
+        this.wrap.find(".selectr-toggle span").text(selectedItem.text());
+        this.setSelectValue(selectedItem.data("value"));
+        if (this.wrap.find(".selectr-drop").is(":visible")) {
+          return this.hideAllDropDowns();
+        }
+      }
+    };
+
+    Selectr.prototype.addSelection = function() {
+      var pill, search, selectedItem, val;
+      selectedItem = this.wrap.find(".selectr-item.selectr-active");
+      if (selectedItem.hasClass("selectr-selected")) {
+        return;
+      }
+      val = selectedItem.data("value");
+      selectedItem.addClass("selectr-selected");
+      pill = this.createSelection(selectedItem.text(), val, selectedItem.data('selected'), selectedItem.data('disabled'));
+      search = this.wrap.find(".selectr-ms-search");
+      search.parent("li").before(pill);
+      this.setSelectValue(val);
+      return search.focus();
+    };
+
+    Selectr.prototype.removeSelection = function(pill) {
+      this.select.find("option[value='" + pill.data("value") + "']").prop("selected", false);
+      return pill.remove();
+    };
+
+    Selectr.prototype.createSelection = function(text, value, selected, disabled) {
+      return $("<li/>", {
+        "class": "selectr-pill"
+      }).data({
+        value: value,
+        selected: selected,
+        disabled: disabled
+      }).append("<button>" + text + "</button>");
+    };
+
+    Selectr.prototype.setSelectValue = function(val) {
+      var item, match, _i, _len, _ref;
+      match = false;
+      this.select.find("option").each(function(i, option) {
+        if ($(option).val() === val && !match) {
+          $(option).prop("selected", true);
+          return match = true;
+        }
+      });
+      _ref = this.data;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        if (item.value === val) {
+          item.selected = true;
+        }
+      }
+      return this;
+    };
+
+    Selectr.prototype.getSelectValue = function() {
+      this.select.val();
+      return this;
+    };
+
+    Selectr.prototype.showNoResults = function(query) {
+      return this.wrap.find(".selectr-results").replaceWith("<ul class='selectr-results no-results'>\n  <li class='selectr-item'>No results found for <b>" + query + "</b></li>\n</ul>");
     };
 
     Selectr.prototype.createListItem = function(row) {
@@ -450,13 +500,6 @@
       isntEnterOrReturn = code !== 13;
       backspaceOrDelete = code === 8 || code === 46;
       return isntUpOrDown && isntEnterOrReturn && (validAlpha || validNumber || validPunc || validMath || space || backspaceOrDelete);
-    };
-
-    Selectr.prototype.defaultSettings = {
-      width: 250,
-      height: 200,
-      multiple: false,
-      onResultSelect: function() {}
     };
 
     return Selectr;

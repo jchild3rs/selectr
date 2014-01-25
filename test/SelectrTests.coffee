@@ -5,6 +5,7 @@ describe "Selectr", ->
   beforeEach ->
     loadStyleFixtures('Selectr.css')
     loadFixtures('selectElement.html.js')
+#    loadFixtures('selectElementMultiple.html.js')
     @select = $("#select-fixture")
 
   afterEach ->
@@ -74,7 +75,6 @@ describe "Selectr", ->
       toggle.trigger "click.selectr"
       expect(wrap).toHaveClass "selectr-open"
 
-
   describe "result list", ->
     it "should create a result list from the data model", ->
       @select.selectr()
@@ -93,7 +93,6 @@ describe "Selectr", ->
       expect(item.data().disabled).toBeDefined()
 
   describe "item selection", ->
-
     it "should populate the original input's value with the selected value", ->
       @select.selectr()
       wrap = @select.next(".selectr-wrap")
