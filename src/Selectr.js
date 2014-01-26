@@ -54,7 +54,7 @@
       if (this.wrap.find(".selectr-active").length === 0) {
         this.wrap.find(".selectr-item").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
       }
-      this.moveScrollDownToItem();
+      this.scrollResultsToItem();
       return $(document).on("click.selectr", this.handleDocumentClick);
     };
 
@@ -148,7 +148,8 @@
     Selectr.prototype.scaleSearchField = function() {
       var defaultStyles, div, newWidth, searchField, style, styles, wrapWidth, _i, _len;
       if (this.settings.multiple) {
-        searchField = this.wrap.find(".selectr-search").removeAttr("placeholder");
+        searchField = this.wrap.find(".selectr-search");
+        searchField.attr("placeholder", "");
         defaultStyles = "position:absolute; left: -1000px; top: -1000px; display:none;";
         styles = ['font-size', 'font-style', 'font-weight', 'font-family', 'line-height', 'text-transform', 'letter-spacing'];
         for (_i = 0, _len = styles.length; _i < _len; _i++) {
@@ -224,7 +225,7 @@
               gutter = this.settings.multiple ? 1 : 0;
               selected.removeClass("selectr-active");
               next.addClass("selectr-active");
-              this.moveScrollDownToItem();
+              this.scrollResultsToItem();
             }
           }
           e.preventDefault();
@@ -249,10 +250,9 @@
       return this;
     };
 
-    Selectr.prototype.moveScrollDownToItem = function() {
+    Selectr.prototype.scrollResultsToItem = function() {
       var currentScrollTop, gutter, next, offset, resultList, selectedHeight;
       gutter = this.settings.multiple ? 1 : 0;
-      console.log(gutter, this.wrap.find(".selectr-hidden").length);
       next = this.wrap.find(".selectr-active");
       resultList = this.wrap.find(".selectr-results");
       currentScrollTop = resultList.scrollTop() + resultList.height();
@@ -514,7 +514,8 @@
     };
 
     Selectr.prototype.createSelectrWrap = function() {
-      var dropdownWrap, msSearchInput, multiSelectWrap, resultsList, searchInput, searchWrap, selectionList, toggleBtn;
+      var dropdownWrap, msSearchInput, multiSelectWrap, noPreSelections, resultsList, searchInput, searchWrap, selectionList, toggleBtn,
+        _this = this;
       this.wrap = $("<div />", {
         "class": "selectr-wrap",
         width: this.settings.width
@@ -545,16 +546,30 @@
         width: this.settings.width - 20
       });
       resultsList = this.createListFromData(this.data);
+      noPreSelections = true;
       if (this.settings.multiple) {
         multiSelectWrap.append(selectionList.append(searchWrap.append(msSearchInput)));
         dropdownWrap.append(resultsList);
         this.wrap.append(multiSelectWrap, dropdownWrap).addClass("selectr-multiple");
+        if (this.select.val() !== "" && this.select.val().length !== 0) {
+          this.select.find("option:selected").each(function(i, option) {
+            var pill;
+            if ($(option).val() !== "") {
+              noPreSelections = false;
+              pill = _this.createSelection($(option).text(), $(option).val(), $(option).is(':selected'), $(option).is(':disabled'));
+              return selectionList.prepend(pill);
+            }
+          });
+          this.scaleSearchField();
+        }
       } else {
         dropdownWrap.append(searchInput, resultsList);
         this.wrap.append(toggleBtn, dropdownWrap);
       }
       this.select.hide().after(this.wrap).attr("tabindex", "-1");
-      this.setDefaultText(this.getDefaultText());
+      if (noPreSelections) {
+        this.setDefaultText(this.getDefaultText());
+      }
       return this.wrap;
     };
 

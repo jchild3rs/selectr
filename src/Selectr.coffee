@@ -30,7 +30,7 @@ class Selectr
       @wrap.find(".selectr-item")
         .not(".selectr-selected, .selectr-disabled")
         .first().addClass("selectr-active")
-    @moveScrollDownToItem()
+    @scrollResultsToItem()
     $(document).on("click.selectr", @handleDocumentClick)
 
   hideAllDropDowns: ->
@@ -110,7 +110,8 @@ class Selectr
 
   scaleSearchField: ->
     if @settings.multiple
-      searchField = @wrap.find(".selectr-search").removeAttr "placeholder"
+      searchField = @wrap.find(".selectr-search")
+      searchField.attr "placeholder", ""
       defaultStyles = "position:absolute; left: -1000px; top: -1000px; display:none;"
       styles = ['font-size','font-style', 'font-weight', 'font-family','line-height', 'text-transform', 'letter-spacing']
       for style in styles
@@ -173,7 +174,7 @@ class Selectr
             gutter = if @settings.multiple then 1 else 0
             selected.removeClass("selectr-active")
             next.addClass("selectr-active")
-            @moveScrollDownToItem()
+            @scrollResultsToItem()
 
         e.preventDefault()
         break
@@ -193,12 +194,10 @@ class Selectr
       else
         break
 
-
     return this
 
-  moveScrollDownToItem: ->
+  scrollResultsToItem: ->
     gutter = if @settings.multiple then 1 else 0
-    console.log gutter, @wrap.find(".selectr-hidden").length
     next = @wrap.find(".selectr-active")
     resultList = @wrap.find(".selectr-results")
     currentScrollTop = resultList.scrollTop() + resultList.height()
@@ -410,17 +409,32 @@ class Selectr
 
     resultsList = @createListFromData(@data)
 
+    noPreSelections = true
     if @settings.multiple
       multiSelectWrap.append selectionList.append searchWrap.append msSearchInput
       dropdownWrap.append resultsList
       @wrap.append(multiSelectWrap, dropdownWrap).addClass "selectr-multiple"
+
+      if @select.val() isnt "" and @select.val().length isnt 0
+        @select.find("option:selected").each (i, option) =>
+          unless $(option).val() is ""
+            noPreSelections = false
+            pill = @createSelection(
+              $(option).text(),
+              $(option).val(),
+              $(option).is(':selected'),
+              $(option).is(':disabled')
+            )
+            selectionList.prepend pill
+        @scaleSearchField()
+
     else
       dropdownWrap.append searchInput, resultsList
       @wrap.append toggleBtn, dropdownWrap
 
     @select.hide().after(@wrap).attr("tabindex", "-1")
-    
-    @setDefaultText(@getDefaultText())
+
+    @setDefaultText(@getDefaultText()) if noPreSelections
     
     return @wrap
 
