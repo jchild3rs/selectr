@@ -139,9 +139,35 @@
     Selectr.prototype.searchInputFocus = function(e) {
       if (this.settings.multiple) {
         this.showDropDown();
+        this.scaleSearchField();
       }
       e.preventDefault();
       return e.stopPropagation();
+    };
+
+    Selectr.prototype.scaleSearchField = function() {
+      var defaultStyles, div, newWidth, searchField, style, styles, wrapWidth, _i, _len;
+      if (this.settings.multiple) {
+        searchField = this.wrap.find(".selectr-search").removeAttr("placeholder");
+        defaultStyles = "position:absolute; left: -1000px; top: -1000px; display:none;";
+        styles = ['font-size', 'font-style', 'font-weight', 'font-family', 'line-height', 'text-transform', 'letter-spacing'];
+        for (_i = 0, _len = styles.length; _i < _len; _i++) {
+          style = styles[_i];
+          defaultStyles += style + ":" + searchField.css(style) + ";";
+        }
+        div = $('<div />', {
+          'style': defaultStyles
+        });
+        div.text(searchField.val());
+        $('body').append(div);
+        newWidth = div.width() + 25;
+        div.remove();
+        wrapWidth = this.wrap.width();
+        if (newWidth > wrapWidth - 10) {
+          newWidth = wrapWidth - 10;
+        }
+        return searchField.width(newWidth);
+      }
     };
 
     Selectr.prototype.searchInputClick = function(e) {
@@ -158,6 +184,7 @@
       drop = this.wrap.find(".selectr-drop");
       resultList = this.wrap.find(".selectr-results");
       toggleBtn = this.wrap.find(".selectr-toggle");
+      this.scaleSearchField();
       switch (stroke) {
         case 9:
           if (drop.is(":visible")) {

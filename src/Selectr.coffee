@@ -102,9 +102,27 @@ class Selectr
 
   # Seach button
   searchInputFocus: (e) =>
-    @showDropDown() if @settings.multiple
+    if @settings.multiple
+      @showDropDown()
+      @scaleSearchField()
     e.preventDefault()
     e.stopPropagation()
+
+  scaleSearchField: ->
+    if @settings.multiple
+      searchField = @wrap.find(".selectr-search").removeAttr "placeholder"
+      defaultStyles = "position:absolute; left: -1000px; top: -1000px; display:none;"
+      styles = ['font-size','font-style', 'font-weight', 'font-family','line-height', 'text-transform', 'letter-spacing']
+      for style in styles
+        defaultStyles += style + ":" + searchField.css(style) + ";"
+      div = $('<div />', { 'style' : defaultStyles })
+      div.text searchField.val()
+      $('body').append div
+      newWidth = div.width() + 25
+      div.remove()
+      wrapWidth = @wrap.width()
+      newWidth = wrapWidth - 10 if newWidth > wrapWidth - 10
+      searchField.width(newWidth)
 
   searchInputClick: (e) =>
     e.preventDefault()
@@ -118,6 +136,8 @@ class Selectr
     drop = @wrap.find(".selectr-drop")
     resultList = @wrap.find(".selectr-results")
     toggleBtn = @wrap.find(".selectr-toggle")
+
+    @scaleSearchField()
 
     switch stroke
       when 9 # tab
