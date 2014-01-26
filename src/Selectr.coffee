@@ -10,23 +10,27 @@ class Selectr
     multiple: false
     onResultSelect: ->
 
-  constructor: (@select, opts) ->
-    @settings = @constructSettings(opts)
-    @originalData = @data = @createData()
-    @wrap = @createSelectrWrap()
+  constructor: (@select, @providedSettings) ->
+    @constructSettings()
+    @createDataModel()
+    @createSelectrWrap()
     @bindEvents()
     
-  constructSettings: (providedOpts) ->
-    settings = $.extend({}, @defaultSettings, providedOpts)
-    settings.multiple = true if @select.attr "multiple"
-    settings.tabindex = @select.attr "tabindex"
-    return settings
+  constructSettings: ->
+    @settings = $.extend({}, @defaultSettings, @providedSettings)
+    @settings.multiple = true if @select.attr "multiple"
+    @settings.tabindex = @select.attr "tabindex"
 
   # Dropdowns
   showDropDown: ->
     @hideAllDropDowns()
     @wrap.addClass("selectr-open")
     @wrap.find(".selectr-drop").show()
+    if @wrap.find(".selectr-active").length is 0
+      @wrap.find(".selectr-item")
+        .not(".selectr-selected, .selectr-disabled")
+        .first().addClass("selectr-active")
+    @moveScrollDownToItem()
     $(document).on("click.selectr", @handleDocumentClick)
 
   hideAllDropDowns: ->
@@ -39,6 +43,11 @@ class Selectr
   resetDropDown: ->
     newResultsList = @createListFromData(@originalData)
     @wrap.find(".selectr-results").replaceWith(newResultsList)
+
+  focusSearchInput: ->
+    searchInput = @wrap.find(".selectr-search")
+    if not searchInput.is(":focus")
+      @wrap.find(".selectr-search").trigger("focus.selectr")
 
   # Event binding
   bindEvents: ->
@@ -66,9 +75,6 @@ class Selectr
       $(document).off("click.selectr", @handleDocumentClick)
     e.preventDefault()
     e.stopPropagation()
-
-  focusSearchInput: =>
-    @wrap.find(".selectr-search").trigger("focus.selectr")
 
   resultItemClick: (e) =>
     @wrap.find(".selectr-active").removeClass("selectr-active")
@@ -115,7 +121,7 @@ class Selectr
 
     switch stroke
       when 9 # tab
-        if @wrap.find(".selectr-drop").is(":visible")
+        if drop.is(":visible")
           @hideAllDropDowns()
           toggleBtn.focus()
       when 27 # esc
@@ -124,35 +130,30 @@ class Selectr
       when 38 # up
         if hasSelection and selected.index() isnt 0
           prev = selected.prevAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first()
-          selected.removeClass("selectr-active")
-          prev.addClass("selectr-active")
-          currentScrollTop = resultList.scrollTop() + resultList.height()
-          selectedHeight = ((selected.index() - 1) * selected.height())
-          offset = currentScrollTop - (resultList.height() - selected.height())
-          if offset > selectedHeight
-            resultList.scrollTop(resultList.scrollTop() + selectedHeight - offset)
+          unless prev.length is 0
+            selected.removeClass("selectr-active")
+            prev.addClass("selectr-active")
+            currentScrollTop = resultList.scrollTop() + resultList.height()
+            selectedHeight = ((prev.index()) * selected.height())
+            offset = currentScrollTop - (resultList.height() - selected.height())
+            if offset > selectedHeight
+              resultList.scrollTop((resultList.scrollTop() + selectedHeight) - offset)
         e.preventDefault()
         break
 
       when 40 # down
+        if @settings.multiple
+          @showDropDown()
+          
         if not hasSelection
           @wrap.find(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active")
         else
           next = selected.nextAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first()
-          if next.length is 0
-            break
-          else
-            gutter = if @settings.multiple then 2 else 1
+          unless next.length is 0
+            gutter = if @settings.multiple then 1 else 0
             selected.removeClass("selectr-active")
             next.addClass("selectr-active")
-            currentScrollTop = resultList.scrollTop() + resultList.height()
-            selectedHeight = (selected.index() + gutter) * selected.height()
-            offset = selectedHeight - currentScrollTop
-            #              console.log "scroll top", currentScrollTop
-            #              console.log "selection height", selectedHeight
-            #              console.log "results height", resultList.height(), resultList.outerHeight()
-            if selectedHeight > currentScrollTop
-              resultList.scrollTop(resultList.scrollTop() + offset)
+            @moveScrollDownToItem()
 
         e.preventDefault()
         break
@@ -166,7 +167,7 @@ class Selectr
 
       when 8 # delete
         if @settings.multiple and query.length is 0 and @wrap.find(".selectr-pill").length > 0
-#          removeMultiSelection(wrap.find(".selectr-pill").last().find("button"), wrap)
+          @removeSelection(@wrap.find(".selectr-pill").last())
           e.preventDefault()
 
       else
@@ -174,6 +175,17 @@ class Selectr
 
 
     return this
+
+  moveScrollDownToItem: ->
+    gutter = if @settings.multiple then 1 else 0
+    console.log gutter, @wrap.find(".selectr-hidden").length
+    next = @wrap.find(".selectr-active")
+    resultList = @wrap.find(".selectr-results")
+    currentScrollTop = resultList.scrollTop() + resultList.height()
+    selectedHeight = (next.index() + gutter) * next.height()
+    offset = selectedHeight - currentScrollTop
+    if selectedHeight > currentScrollTop
+      resultList.scrollTop(resultList.scrollTop() + offset)
 
   searchInputKeyUp: (e) =>
     stroke = e.which || e.keyCode
@@ -215,13 +227,14 @@ class Selectr
 
 
   # Data
-  createData: -> ({
-    label: $(option).attr("label") || "" # is optgroup
-    text: $(option).text()
-    value: $(option).val()
-    disabled: $(option).is(':disabled')
-    selected: $(option).is(':selected')
-  } for option in @select.find("optgroup, option"))
+  createDataModel: ->
+    @originalData = @data = ({
+      label: $(option).attr("label") || "" # is optgroup
+      text: $(option).text()
+      value: $(option).val()
+      disabled: $(option).is(':disabled')
+      selected: $(option).is(':selected')
+    } for option in @select.find("optgroup, option"))
 
   findMatchesInItem: (item, query) ->
     if item.text?
@@ -268,19 +281,28 @@ class Selectr
     search.parent("li").before pill
 
     @setSelectValue(val)
-    # update data model
 
     search.focus()
+    @hideAllDropDowns()
 
   removeSelection: (pill) ->
-    @select.find("option[value='" + pill.data("value") + "']").prop("selected", false)
+    @unsetSelectValue(pill.data("value"))
     pill.remove()
+    @focusSearchInput()
 
   createSelection: (text, value, selected, disabled) ->
     return $("<li/>", class: "selectr-pill")
       .data(value: value, selected: selected, disabled: disabled)
       .append("<button>#{text}</button>")
 
+  unsetSelectValue: (val) ->
+    @wrap.find(".selectr-selected:contains('#{val}')")
+      .removeClass("selectr-selected")
+      .removeClass("selectr-active")
+    opts = @select.find("option[value='#{val}']").prop("selected", false)
+    if opts.length is 0 # probably not using value attribute
+      @select.find(":contains(#{val})").prop("selected", false)
+    item.selected = false for item in @data when item.value is val
 
   setSelectValue: (val) ->
     match = false
@@ -331,7 +353,7 @@ class Selectr
 
   setDefaultText: (text) ->
     if @settings.multiple
-      @wrap.find(".selectr-search").attr "placeholder", text
+      @wrap.find(".selectr-ms-search").attr "placeholder", text
     else
       @wrap.find(".selectr-toggle span").text text
 
@@ -349,10 +371,10 @@ class Selectr
       "Select an option"
 
   createSelectrWrap: ->
-    wrap = $("<div />", class: "selectr-wrap", width: @settings.width)
+    @wrap = $("<div />", class: "selectr-wrap", width: @settings.width)
     toggleBtn = $("<a />",
       class: "selectr-toggle", tabindex: @select.attr("tabindex") or "")
-    toggleBtn.append("<span>#{@getDefaultText()}</span><div><i></i></div>")
+    toggleBtn.append("<span></span><div><i></i></div>")
     searchInput = $("<input />",
       class: "selectr-search", type: "text", autocomplete: "off")
     dropdownWrap = $("<div />", class: "selectr-drop")
@@ -363,7 +385,6 @@ class Selectr
       type: "text",
       class: "selectr-ms-search selectr-search",
       autocomplete: "off",
-      placeholder: @getDefaultText()
       tabindex: @select.attr('tabindex')
       width: @settings.width - 20
 
@@ -372,29 +393,32 @@ class Selectr
     if @settings.multiple
       multiSelectWrap.append selectionList.append searchWrap.append msSearchInput
       dropdownWrap.append resultsList
-      wrap.append(multiSelectWrap, dropdownWrap).addClass "selectr-multiple"
+      @wrap.append(multiSelectWrap, dropdownWrap).addClass "selectr-multiple"
     else
       dropdownWrap.append searchInput, resultsList
-      wrap.append toggleBtn, dropdownWrap
+      @wrap.append toggleBtn, dropdownWrap
 
-    @select.hide().after(wrap).attr("tabindex", "-1")
-
-    return wrap
+    @select.hide().after(@wrap).attr("tabindex", "-1")
+    
+    @setDefaultText(@getDefaultText())
+    
+    return @wrap
 
   isValidKeyCode = (code) ->
-    validAlpha = (code >= 65 and code <= 90)
     # alpha a-Z = 65-90
-    validNumber = (code >= 48 and code <= 57)
+    validAlpha = (code >= 65 and code <= 90)
     # numbers (0-9) = 48-57
-    validPunc = (code >= 185 and code <= 192) or (code >= 219 and code <= 222) and code isnt 220
+    validNumber = (code >= 48 and code <= 57)
     # punc = 186-192, 219-222 (except back slash, which breaks regex)
-    validMath = (code >= 106 and code <= 111)
+    validPunc = (code >= 185 and code <= 192) or (code >= 219 and code <= 222) and code isnt 220
     # math = 106-111
-    space = (code == 32)
+    validMath = (code >= 106 and code <= 111)
+    # space = 32
+    isSpace = (code == 32)
     # is not up or down arrow keys
     isntUpOrDown = (code isnt 38 and code isnt 40)
-    isntEnterOrReturn = (code isnt 13)
-    # space = 32
-    backspaceOrDelete = (code is 8 or code is 46)
+    # not enter
+    isntEnter = (code isnt 13)
     # backspace/delete = 8, 46
-    return isntUpOrDown and  isntEnterOrReturn and (validAlpha or validNumber or validPunc or validMath or space or backspaceOrDelete)
+    backspaceOrDelete = (code is 8 or code is 46)
+    isntUpOrDown and isntEnter and (validAlpha or validNumber or validPunc or validMath or isSpace or backspaceOrDelete)

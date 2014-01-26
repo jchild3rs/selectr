@@ -20,8 +20,9 @@
       onResultSelect: function() {}
     };
 
-    function Selectr(select, opts) {
+    function Selectr(select, providedSettings) {
       this.select = select;
+      this.providedSettings = providedSettings;
       this.selectionWrapClick = __bind(this.selectionWrapClick, this);
       this.searchInputKeyUp = __bind(this.searchInputKeyUp, this);
       this.searchInputKeyDown = __bind(this.searchInputKeyDown, this);
@@ -30,29 +31,30 @@
       this.toggleBtnKeyDown = __bind(this.toggleBtnKeyDown, this);
       this.toggleBtnClick = __bind(this.toggleBtnClick, this);
       this.resultItemClick = __bind(this.resultItemClick, this);
-      this.focusSearchInput = __bind(this.focusSearchInput, this);
       this.handleDocumentClick = __bind(this.handleDocumentClick, this);
       this.selectionItemClick = __bind(this.selectionItemClick, this);
-      this.settings = this.constructSettings(opts);
-      this.originalData = this.data = this.createData();
-      this.wrap = this.createSelectrWrap();
+      this.constructSettings();
+      this.createDataModel();
+      this.createSelectrWrap();
       this.bindEvents();
     }
 
-    Selectr.prototype.constructSettings = function(providedOpts) {
-      var settings;
-      settings = $.extend({}, this.defaultSettings, providedOpts);
+    Selectr.prototype.constructSettings = function() {
+      this.settings = $.extend({}, this.defaultSettings, this.providedSettings);
       if (this.select.attr("multiple")) {
-        settings.multiple = true;
+        this.settings.multiple = true;
       }
-      settings.tabindex = this.select.attr("tabindex");
-      return settings;
+      return this.settings.tabindex = this.select.attr("tabindex");
     };
 
     Selectr.prototype.showDropDown = function() {
       this.hideAllDropDowns();
       this.wrap.addClass("selectr-open");
       this.wrap.find(".selectr-drop").show();
+      if (this.wrap.find(".selectr-active").length === 0) {
+        this.wrap.find(".selectr-item").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
+      }
+      this.moveScrollDownToItem();
       return $(document).on("click.selectr", this.handleDocumentClick);
     };
 
@@ -66,6 +68,14 @@
       var newResultsList;
       newResultsList = this.createListFromData(this.originalData);
       return this.wrap.find(".selectr-results").replaceWith(newResultsList);
+    };
+
+    Selectr.prototype.focusSearchInput = function() {
+      var searchInput;
+      searchInput = this.wrap.find(".selectr-search");
+      if (!searchInput.is(":focus")) {
+        return this.wrap.find(".selectr-search").trigger("focus.selectr");
+      }
     };
 
     Selectr.prototype.bindEvents = function() {
@@ -96,10 +106,6 @@
       }
       e.preventDefault();
       return e.stopPropagation();
-    };
-
-    Selectr.prototype.focusSearchInput = function() {
-      return this.wrap.find(".selectr-search").trigger("focus.selectr");
     };
 
     Selectr.prototype.resultItemClick = function(e) {
@@ -154,7 +160,7 @@
       toggleBtn = this.wrap.find(".selectr-toggle");
       switch (stroke) {
         case 9:
-          if (this.wrap.find(".selectr-drop").is(":visible")) {
+          if (drop.is(":visible")) {
             this.hideAllDropDowns();
             toggleBtn.focus();
           }
@@ -166,34 +172,32 @@
         case 38:
           if (hasSelection && selected.index() !== 0) {
             prev = selected.prevAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
-            selected.removeClass("selectr-active");
-            prev.addClass("selectr-active");
-            currentScrollTop = resultList.scrollTop() + resultList.height();
-            selectedHeight = (selected.index() - 1) * selected.height();
-            offset = currentScrollTop - (resultList.height() - selected.height());
-            if (offset > selectedHeight) {
-              resultList.scrollTop(resultList.scrollTop() + selectedHeight - offset);
+            if (prev.length !== 0) {
+              selected.removeClass("selectr-active");
+              prev.addClass("selectr-active");
+              currentScrollTop = resultList.scrollTop() + resultList.height();
+              selectedHeight = (prev.index()) * selected.height();
+              offset = currentScrollTop - (resultList.height() - selected.height());
+              if (offset > selectedHeight) {
+                resultList.scrollTop((resultList.scrollTop() + selectedHeight) - offset);
+              }
             }
           }
           e.preventDefault();
           break;
         case 40:
+          if (this.settings.multiple) {
+            this.showDropDown();
+          }
           if (!hasSelection) {
             this.wrap.find(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
           } else {
             next = selected.nextAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
-            if (next.length === 0) {
-              break;
-            } else {
-              gutter = this.settings.multiple ? 2 : 1;
+            if (next.length !== 0) {
+              gutter = this.settings.multiple ? 1 : 0;
               selected.removeClass("selectr-active");
               next.addClass("selectr-active");
-              currentScrollTop = resultList.scrollTop() + resultList.height();
-              selectedHeight = (selected.index() + gutter) * selected.height();
-              offset = selectedHeight - currentScrollTop;
-              if (selectedHeight > currentScrollTop) {
-                resultList.scrollTop(resultList.scrollTop() + offset);
-              }
+              this.moveScrollDownToItem();
             }
           }
           e.preventDefault();
@@ -208,6 +212,7 @@
           break;
         case 8:
           if (this.settings.multiple && query.length === 0 && this.wrap.find(".selectr-pill").length > 0) {
+            this.removeSelection(this.wrap.find(".selectr-pill").last());
             e.preventDefault();
           }
           break;
@@ -215,6 +220,20 @@
           break;
       }
       return this;
+    };
+
+    Selectr.prototype.moveScrollDownToItem = function() {
+      var currentScrollTop, gutter, next, offset, resultList, selectedHeight;
+      gutter = this.settings.multiple ? 1 : 0;
+      console.log(gutter, this.wrap.find(".selectr-hidden").length);
+      next = this.wrap.find(".selectr-active");
+      resultList = this.wrap.find(".selectr-results");
+      currentScrollTop = resultList.scrollTop() + resultList.height();
+      selectedHeight = (next.index() + gutter) * next.height();
+      offset = selectedHeight - currentScrollTop;
+      if (selectedHeight > currentScrollTop) {
+        return resultList.scrollTop(resultList.scrollTop() + offset);
+      }
     };
 
     Selectr.prototype.searchInputKeyUp = function(e) {
@@ -259,21 +278,24 @@
       }
     };
 
-    Selectr.prototype.createData = function() {
-      var option, _i, _len, _ref, _results;
-      _ref = this.select.find("optgroup, option");
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        option = _ref[_i];
-        _results.push({
-          label: $(option).attr("label") || "",
-          text: $(option).text(),
-          value: $(option).val(),
-          disabled: $(option).is(':disabled'),
-          selected: $(option).is(':selected')
-        });
-      }
-      return _results;
+    Selectr.prototype.createDataModel = function() {
+      var option;
+      return this.originalData = this.data = (function() {
+        var _i, _len, _ref, _results;
+        _ref = this.select.find("optgroup, option");
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          option = _ref[_i];
+          _results.push({
+            label: $(option).attr("label") || "",
+            text: $(option).text(),
+            value: $(option).val(),
+            disabled: $(option).is(':disabled'),
+            selected: $(option).is(':selected')
+          });
+        }
+        return _results;
+      }).call(this);
     };
 
     Selectr.prototype.findMatchesInItem = function(item, query) {
@@ -332,12 +354,14 @@
       search = this.wrap.find(".selectr-ms-search");
       search.parent("li").before(pill);
       this.setSelectValue(val);
-      return search.focus();
+      search.focus();
+      return this.hideAllDropDowns();
     };
 
     Selectr.prototype.removeSelection = function(pill) {
-      this.select.find("option[value='" + pill.data("value") + "']").prop("selected", false);
-      return pill.remove();
+      this.unsetSelectValue(pill.data("value"));
+      pill.remove();
+      return this.focusSearchInput();
     };
 
     Selectr.prototype.createSelection = function(text, value, selected, disabled) {
@@ -348,6 +372,24 @@
         selected: selected,
         disabled: disabled
       }).append("<button>" + text + "</button>");
+    };
+
+    Selectr.prototype.unsetSelectValue = function(val) {
+      var item, opts, _i, _len, _ref, _results;
+      this.wrap.find(".selectr-selected:contains('" + val + "')").removeClass("selectr-selected").removeClass("selectr-active");
+      opts = this.select.find("option[value='" + val + "']").prop("selected", false);
+      if (opts.length === 0) {
+        this.select.find(":contains(" + val + ")").prop("selected", false);
+      }
+      _ref = this.data;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        if (item.value === val) {
+          _results.push(item.selected = false);
+        }
+      }
+      return _results;
     };
 
     Selectr.prototype.setSelectValue = function(val) {
@@ -424,7 +466,7 @@
 
     Selectr.prototype.setDefaultText = function(text) {
       if (this.settings.multiple) {
-        return this.wrap.find(".selectr-search").attr("placeholder", text);
+        return this.wrap.find(".selectr-ms-search").attr("placeholder", text);
       } else {
         return this.wrap.find(".selectr-toggle span").text(text);
       }
@@ -445,8 +487,8 @@
     };
 
     Selectr.prototype.createSelectrWrap = function() {
-      var dropdownWrap, msSearchInput, multiSelectWrap, resultsList, searchInput, searchWrap, selectionList, toggleBtn, wrap;
-      wrap = $("<div />", {
+      var dropdownWrap, msSearchInput, multiSelectWrap, resultsList, searchInput, searchWrap, selectionList, toggleBtn;
+      this.wrap = $("<div />", {
         "class": "selectr-wrap",
         width: this.settings.width
       });
@@ -454,7 +496,7 @@
         "class": "selectr-toggle",
         tabindex: this.select.attr("tabindex") || ""
       });
-      toggleBtn.append("<span>" + (this.getDefaultText()) + "</span><div><i></i></div>");
+      toggleBtn.append("<span></span><div><i></i></div>");
       searchInput = $("<input />", {
         "class": "selectr-search",
         type: "text",
@@ -472,7 +514,6 @@
         type: "text",
         "class": "selectr-ms-search selectr-search",
         autocomplete: "off",
-        placeholder: this.getDefaultText(),
         tabindex: this.select.attr('tabindex'),
         width: this.settings.width - 20
       });
@@ -480,26 +521,27 @@
       if (this.settings.multiple) {
         multiSelectWrap.append(selectionList.append(searchWrap.append(msSearchInput)));
         dropdownWrap.append(resultsList);
-        wrap.append(multiSelectWrap, dropdownWrap).addClass("selectr-multiple");
+        this.wrap.append(multiSelectWrap, dropdownWrap).addClass("selectr-multiple");
       } else {
         dropdownWrap.append(searchInput, resultsList);
-        wrap.append(toggleBtn, dropdownWrap);
+        this.wrap.append(toggleBtn, dropdownWrap);
       }
-      this.select.hide().after(wrap).attr("tabindex", "-1");
-      return wrap;
+      this.select.hide().after(this.wrap).attr("tabindex", "-1");
+      this.setDefaultText(this.getDefaultText());
+      return this.wrap;
     };
 
     isValidKeyCode = function(code) {
-      var backspaceOrDelete, isntEnterOrReturn, isntUpOrDown, space, validAlpha, validMath, validNumber, validPunc;
+      var backspaceOrDelete, isSpace, isntEnter, isntUpOrDown, validAlpha, validMath, validNumber, validPunc;
       validAlpha = code >= 65 && code <= 90;
       validNumber = code >= 48 && code <= 57;
       validPunc = (code >= 185 && code <= 192) || (code >= 219 && code <= 222) && code !== 220;
       validMath = code >= 106 && code <= 111;
-      space = code === 32;
+      isSpace = code === 32;
       isntUpOrDown = code !== 38 && code !== 40;
-      isntEnterOrReturn = code !== 13;
+      isntEnter = code !== 13;
       backspaceOrDelete = code === 8 || code === 46;
-      return isntUpOrDown && isntEnterOrReturn && (validAlpha || validNumber || validPunc || validMath || space || backspaceOrDelete);
+      return isntUpOrDown && isntEnter && (validAlpha || validNumber || validPunc || validMath || isSpace || backspaceOrDelete);
     };
 
     return Selectr;
