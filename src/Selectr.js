@@ -271,8 +271,8 @@
       gutter = this.settings.multiple ? 1 : 0;
       next = this.wrap.find(".selectr-active");
       resultList = this.wrap.find(".selectr-results");
-      currentScrollTop = resultList.scrollTop() + resultList.height();
-      selectedHeight = (next.index() + gutter) * next.height();
+      currentScrollTop = resultList.scrollTop() + resultList.outerHeight();
+      selectedHeight = (next.index() + gutter) * next.outerHeight();
       offset = selectedHeight - currentScrollTop;
       if (selectedHeight > currentScrollTop) {
         return resultList.scrollTop(resultList.scrollTop() + offset);
@@ -386,7 +386,7 @@
     Selectr.prototype.addSelection = function() {
       var pill, search, selectedItem, val;
       selectedItem = this.wrap.find(".selectr-item.selectr-active");
-      if (selectedItem.hasClass("selectr-selected")) {
+      if (selectedItem.hasClass("selectr-selected") || selectedItem.hasClass("selectr-disabled")) {
         return;
       }
       val = selectedItem.data("value");
@@ -469,7 +469,7 @@
       } else {
         button = $("<button />", {
           type: "button"
-        }).html(row.text);
+        }).html("<span>" + row.text + "</span>");
         li = $("<li />").append(button).data({
           value: row.value,
           selected: row.selected,

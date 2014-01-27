@@ -85,7 +85,7 @@ class Selectr
     e.stopPropagation()
     e.preventDefault()
 
-  # Toggle button
+  # Wrap events
   wrapClick: (e) ->
     unless @wrap.find(".selectr-drop").is ":visible"
       @showDropDown()
@@ -103,12 +103,6 @@ class Selectr
         @focusSearchInput()
         e.preventDefault()
         e.stopPropagation()
-#    else
-#      @hideAllDropDowns()
-#      console.log 'is visible'
-  #    If is down arrow or enter, show drop down
-
-#      if not drop.is(":visible") and stroke is 40 or stroke is 13
 
   # Seach button
   searchInputFocus: (e) ->
@@ -214,8 +208,8 @@ class Selectr
     gutter = if @settings.multiple then 1 else 0
     next = @wrap.find(".selectr-active")
     resultList = @wrap.find(".selectr-results")
-    currentScrollTop = resultList.scrollTop() + resultList.height()
-    selectedHeight = (next.index() + gutter) * next.height()
+    currentScrollTop = resultList.scrollTop() + resultList.outerHeight()
+    selectedHeight = (next.index() + gutter) * next.outerHeight()
     offset = selectedHeight - currentScrollTop
     if selectedHeight > currentScrollTop
       resultList.scrollTop(resultList.scrollTop() + offset)
@@ -297,7 +291,7 @@ class Selectr
 
   addSelection: ->
     selectedItem = @wrap.find(".selectr-item.selectr-active")
-    return if selectedItem.hasClass("selectr-selected")
+    return if selectedItem.hasClass("selectr-selected") or selectedItem.hasClass("selectr-disabled")
 
     val = selectedItem.data("value")
 
@@ -362,7 +356,7 @@ class Selectr
       li = $("<li />", class: "selectr-label").text(row.label)
     else
       button = $("<button />", type: "button")
-        .html row.text
+        .html """<span>#{row.text}</span>"""
       li = $("<li />").append(button).data
         value: row.value
         selected: row.selected
