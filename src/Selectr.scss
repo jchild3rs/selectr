@@ -6,6 +6,7 @@ $shadow-color: rgba(0, 0, 0, 0.2);
 $background-color: #fdfdfd;
 $icon-spacing: 5px;
 $active-color: #2f4e7d;
+$text-color: #333;
 
 @import "icon/*.png";
 @include all-icon-sprites(true);
@@ -165,6 +166,8 @@ $active-color: #2f4e7d;
   border: 1px solid $border-color;
   border-radius: 3px;
   cursor: pointer;
+  color: $text-color;
+  text-decoration: none;
 //  &:focus {
 //    outline: $active-color auto 5px;
 //  }

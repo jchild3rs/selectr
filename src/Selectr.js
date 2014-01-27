@@ -37,6 +37,7 @@
     };
 
     Selectr.prototype.showDropDown = function() {
+      var _this = this;
       this.hideAllDropDowns();
       this.wrap.addClass("selectr-open");
       this.wrap.find(".selectr-drop").show();
@@ -44,7 +45,9 @@
         this.wrap.find(".selectr-item").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
       }
       this.scrollResultsToItem();
-      return $(document).on("click.selectr", this.handleDocumentClick);
+      return $(document).on("click.selectr", function(e) {
+        return _this.handleDocumentClick(e);
+      });
     };
 
     Selectr.prototype.hideAllDropDowns = function() {
@@ -56,7 +59,8 @@
     Selectr.prototype.resetDropDown = function() {
       var newResultsList;
       newResultsList = this.createListFromData(this.originalData);
-      return this.wrap.find(".selectr-results").replaceWith(newResultsList);
+      this.wrap.find(".selectr-results").replaceWith(newResultsList);
+      return this.wrap.trigger("focus.selectr");
     };
 
     Selectr.prototype.focusSearchInput = function() {
@@ -69,12 +73,12 @@
 
     Selectr.prototype.bindEvents = function() {
       var _this = this;
-      this.wrap.find(".selectr-toggle").on({
+      this.wrap.on({
         "click.selectr": function(e) {
-          return _this.toggleBtnClick(e);
+          return _this.wrapClick(e);
         },
         "keydown.selectr": function(e) {
-          return _this.toggleBtnKeyDown(e);
+          return _this.wrapKeyDown(e);
         }
       });
       this.wrap.find(".selectr-drop").on("click.selectr", ".selectr-item", function(e) {
@@ -110,7 +114,7 @@
     Selectr.prototype.handleDocumentClick = function(e) {
       if (e.currentTarget === document && this.wrap.find(".selectr-drop").is(":visible")) {
         this.hideAllDropDowns();
-        $(document).off("click.selectr", this.handleDocumentClick);
+        $(document).off("click.selectr");
       }
       e.preventDefault();
       return e.stopPropagation();
@@ -124,7 +128,7 @@
       return e.preventDefault();
     };
 
-    Selectr.prototype.toggleBtnClick = function(e) {
+    Selectr.prototype.wrapClick = function(e) {
       if (!this.wrap.find(".selectr-drop").is(":visible")) {
         this.showDropDown();
         this.focusSearchInput();
@@ -135,12 +139,16 @@
       return e.preventDefault();
     };
 
-    Selectr.prototype.toggleBtnKeyDown = function(e) {
+    Selectr.prototype.wrapKeyDown = function(e) {
       var stroke;
       stroke = e.which || e.keyCode;
-      if (stroke === 40 || stroke === 13) {
-        this.showDropDown();
-        return this.focusSearchInput();
+      if (!this.wrap.find(".selectr-drop").is(":visible")) {
+        if (stroke === 40) {
+          this.showDropDown();
+          this.focusSearchInput();
+          e.preventDefault();
+          return e.stopPropagation();
+        }
       }
     };
 
@@ -159,16 +167,16 @@
         searchField = this.wrap.find(".selectr-search");
         searchField.attr("placeholder", "");
         defaultStyles = "position:absolute; left: -1000px; top: -1000px; display:none;";
-        styles = ['font-size', 'font-style', 'font-weight', 'font-family', 'line-height', 'text-transform', 'letter-spacing'];
+        styles = ["font-size", "font-style", "font-weight", "font-family", "line-height", "text-transform", "letter-spacing"];
         for (_i = 0, _len = styles.length; _i < _len; _i++) {
           style = styles[_i];
           defaultStyles += style + ":" + searchField.css(style) + ";";
         }
-        div = $('<div />', {
-          'style': defaultStyles
+        div = $("<div />", {
+          "style": defaultStyles
         });
         div.text(searchField.val());
-        $('body').append(div);
+        $("body").append(div);
         newWidth = div.width() + 25;
         div.remove();
         wrapWidth = this.wrap.width();
@@ -185,25 +193,24 @@
     };
 
     Selectr.prototype.searchInputKeyDown = function(e) {
-      var currentScrollTop, drop, gutter, hasSelection, next, offset, prev, query, resultList, selected, selectedHeight, stroke, toggleBtn;
+      var currentScrollTop, drop, hasSelection, next, offset, prev, query, resultList, selected, selectedHeight, stroke;
       stroke = e.which || e.keyCode;
       query = e.currentTarget.value;
       selected = this.wrap.find(".selectr-active");
       hasSelection = selected.length !== 0;
       drop = this.wrap.find(".selectr-drop");
       resultList = this.wrap.find(".selectr-results");
-      toggleBtn = this.wrap.find(".selectr-toggle");
       this.scaleSearchField();
       switch (stroke) {
         case 9:
           if (drop.is(":visible")) {
             this.hideAllDropDowns();
-            toggleBtn.focus();
+            this.wrap.focus();
           }
           break;
         case 27:
           this.hideAllDropDowns();
-          toggleBtn.focus();
+          this.wrap.focus();
           break;
         case 38:
           if (hasSelection && selected.index() !== 0) {
@@ -230,7 +237,6 @@
           } else {
             next = selected.nextAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
             if (next.length !== 0) {
-              gutter = this.settings.multiple ? 1 : 0;
               selected.removeClass("selectr-active");
               next.addClass("selectr-active");
               this.scrollResultsToItem();
@@ -243,6 +249,7 @@
             this.makeSelection();
             this.wrap.find(".selectr-search").val("");
             this.resetDropDown();
+            e.preventDefault();
             break;
           }
           break;
@@ -250,6 +257,7 @@
           if (this.settings.multiple && query.length === 0 && this.wrap.find(".selectr-pill").length > 0) {
             this.removeSelection(this.wrap.find(".selectr-pill").last());
             e.preventDefault();
+            break;
           }
           break;
         default:
@@ -325,8 +333,8 @@
             label: $(option).attr("label") || "",
             text: $(option).text(),
             value: $(option).val(),
-            disabled: $(option).is(':disabled'),
-            selected: $(option).is(':selected')
+            disabled: $(option).is(":disabled"),
+            selected: $(option).is(":selected")
           });
         }
         return _results;
@@ -371,9 +379,7 @@
       } else {
         this.wrap.find(".selectr-toggle span").text(selectedItem.text());
         this.setSelectValue(selectedItem.data("value"));
-        if (this.wrap.find(".selectr-drop").is(":visible")) {
-          return this.hideAllDropDowns();
-        }
+        return this.hideAllDropDowns();
       }
     };
 
@@ -385,12 +391,11 @@
       }
       val = selectedItem.data("value");
       selectedItem.addClass("selectr-selected");
-      pill = this.createSelection(selectedItem.text(), val, selectedItem.data('selected'), selectedItem.data('disabled'));
+      pill = this.createSelection(selectedItem.text(), val, selectedItem.data("selected"), selectedItem.data("disabled"));
       search = this.wrap.find(".selectr-ms-search");
       search.parent("li").before(pill);
       this.setSelectValue(val);
-      search.focus();
-      return this.hideAllDropDowns();
+      return search.focus();
     };
 
     Selectr.prototype.removeSelection = function(pill) {
@@ -414,7 +419,7 @@
       this.wrap.find(".selectr-selected:contains('" + val + "')").removeClass("selectr-selected").removeClass("selectr-active");
       opts = this.select.find("option[value='" + val + "']").prop("selected", false);
       if (opts.length === 0) {
-        this.select.find(":contains(" + val + ")").prop("selected", false);
+        this.select.find(":contains('" + val + "')").prop("selected", false);
       }
       _ref = this.data;
       _results = [];
@@ -452,7 +457,7 @@
     };
 
     Selectr.prototype.showNoResults = function(query) {
-      return this.wrap.find(".selectr-results").replaceWith("<ul class='selectr-results no-results'>\n  <li class='selectr-item'>No results found for <b>" + query + "</b></li>\n</ul>");
+      return this.wrap.find(".selectr-results").replaceWith("<ul class=\"selectr-results no-results\">\n  <li class=\"selectr-item\">No results found for <b>" + query + "</b></li>\n</ul>");
     };
 
     Selectr.prototype.createListItem = function(row) {
@@ -508,8 +513,8 @@
     };
 
     Selectr.prototype.getDefaultText = function() {
-      if (this.settings.placeholder) {
-        return this.settings.placeholder;
+      if (this.settings.hasOwnProperty("placeholder")) {
+        return this.settings["placeholder"];
       } else if (this.select.data("placeholder")) {
         return this.select.data("placeholder");
       } else if (this.select.attr("placeholder")) {
@@ -518,6 +523,17 @@
         return this.select.find("option:empty").text();
       } else {
         return "Select an option";
+      }
+    };
+
+    Selectr.prototype.setTabIndex = function() {
+      var tabindex;
+      this.select.attr("tabindex", -1);
+      tabindex = this.settings.tabindex;
+      if (this.settings.multiple) {
+        return this.wrap.find(".selectr-ms-search").attr("tabindex", tabindex);
+      } else {
+        return this.wrap[0].tabIndex = tabindex;
       }
     };
 
@@ -530,7 +546,6 @@
       });
       toggleBtn = $("<a />", {
         "class": "selectr-toggle",
-        tabindex: this.select.attr("tabindex") || "",
         href: "#"
       });
       toggleBtn.append("<span></span><div><i></i></div>");
@@ -551,7 +566,7 @@
         type: "text",
         "class": "selectr-ms-search selectr-search",
         autocomplete: "off",
-        tabindex: this.select.attr('tabindex'),
+        tabindex: this.select.attr("tabindex"),
         width: this.settings.width - 20
       });
       resultsList = this.createListFromData(this.data);
@@ -565,7 +580,7 @@
             var pill;
             if ($(option).val() !== "") {
               noPreSelections = false;
-              pill = _this.createSelection($(option).text(), $(option).val(), $(option).is(':selected'), $(option).is(':disabled'));
+              pill = _this.createSelection($(option).text(), $(option).val(), $(option).is(":selected"), $(option).is(":disabled"));
               return selectionList.prepend(pill);
             }
           });
@@ -579,6 +594,7 @@
       if (noPreSelections) {
         this.setDefaultText(this.getDefaultText());
       }
+      this.setTabIndex();
       return this.wrap;
     };
 
