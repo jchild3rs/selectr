@@ -10,15 +10,6 @@
   });
 
   Selectr = (function() {
-    var isValidKeyCode;
-
-    Selectr.prototype.defaultSettings = {
-      width: 250,
-      height: 200,
-      multiple: false,
-      onResultSelect: function() {}
-    };
-
     function Selectr(select, providedSettings) {
       this.select = select;
       this.providedSettings = providedSettings;
@@ -28,12 +19,22 @@
       this.bindEvents();
     }
 
+    Selectr.prototype.defaultSettings = {
+      wrapWidth: 250,
+      wrapHeight: 200,
+      itemHeight: 30,
+      multiple: false,
+      tabindex: -1,
+      placeholder: ""
+    };
+
     Selectr.prototype.constructSettings = function() {
       this.settings = $.extend({}, this.defaultSettings, this.providedSettings);
       if (this.select.attr("multiple")) {
         this.settings.multiple = true;
       }
-      return this.settings.tabindex = this.select.attr("tabindex");
+      this.settings.tabindex = this.select.attr("tabindex");
+      return this.settings.placeholder = this.getDefaultText();
     };
 
     Selectr.prototype.showDropDown = function() {
@@ -41,13 +42,20 @@
       this.hideAllDropDowns();
       this.wrap.addClass("selectr-open");
       this.wrap.find(".selectr-drop").show();
-      if (this.wrap.find(".selectr-active").length === 0) {
-        this.wrap.find(".selectr-item").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
-      }
+      this.focusFirstItem();
       this.scrollResultsToItem();
+      if (this.settings.multiple) {
+        this.scaleSearchField();
+      }
       return $(document).on("click.selectr", function(e) {
         return _this.handleDocumentClick(e);
       });
+    };
+
+    Selectr.prototype.focusFirstItem = function() {
+      if (this.wrap.find(".selectr-active").length === 0) {
+        return this.wrap.find(".selectr-item").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
+      }
     };
 
     Selectr.prototype.hideAllDropDowns = function() {
@@ -61,14 +69,6 @@
       newResultsList = this.createListFromData(this.originalData);
       this.wrap.find(".selectr-results").replaceWith(newResultsList);
       return this.wrap.trigger("focus.selectr");
-    };
-
-    Selectr.prototype.focusSearchInput = function() {
-      var searchInput;
-      searchInput = this.wrap.find(".selectr-search");
-      if (!searchInput.is(":focus")) {
-        return this.wrap.find(".selectr-search").trigger("focus.selectr");
-      }
     };
 
     Selectr.prototype.bindEvents = function() {
@@ -155,36 +155,9 @@
     Selectr.prototype.searchInputFocus = function(e) {
       if (this.settings.multiple) {
         this.showDropDown();
-        this.scaleSearchField();
       }
       e.preventDefault();
       return e.stopPropagation();
-    };
-
-    Selectr.prototype.scaleSearchField = function() {
-      var defaultStyles, div, newWidth, searchField, style, styles, wrapWidth, _i, _len;
-      if (this.settings.multiple) {
-        searchField = this.wrap.find(".selectr-search");
-        searchField.attr("placeholder", "");
-        defaultStyles = "position:absolute; left: -1000px; top: -1000px; display:none;";
-        styles = ["font-size", "font-style", "font-weight", "font-family", "line-height", "text-transform", "letter-spacing"];
-        for (_i = 0, _len = styles.length; _i < _len; _i++) {
-          style = styles[_i];
-          defaultStyles += style + ":" + searchField.css(style) + ";";
-        }
-        div = $("<div />", {
-          "style": defaultStyles
-        });
-        div.text(searchField.val());
-        $("body").append(div);
-        newWidth = div.width() + 25;
-        div.remove();
-        wrapWidth = this.wrap.width();
-        if (newWidth > wrapWidth - 10) {
-          newWidth = wrapWidth - 10;
-        }
-        return searchField.width(newWidth);
-      }
     };
 
     Selectr.prototype.searchInputClick = function(e) {
@@ -222,7 +195,7 @@
               selectedHeight = (prev.index()) * selected.height();
               offset = currentScrollTop - (resultList.height() - selected.height());
               if (offset > selectedHeight) {
-                resultList.scrollTop((resultList.scrollTop() + selectedHeight) - offset);
+                resultList.scrollTop(resultList.scrollTop() + selectedHeight - offset);
               }
             }
           }
@@ -249,12 +222,13 @@
             this.makeSelection();
             this.wrap.find(".selectr-search").val("");
             this.resetDropDown();
-            e.preventDefault();
-            break;
+            this.focusFirstItem();
+            this.scrollResultsToItem();
           }
+          e.preventDefault();
           break;
         case 8:
-          if (this.settings.multiple && query.length === 0 && this.wrap.find(".selectr-pill").length > 0) {
+          if ((this.settings.multiple && query.length === 0) && (this.wrap.find(".selectr-pill").length > 0)) {
             this.removeSelection(this.wrap.find(".selectr-pill").last());
             e.preventDefault();
             break;
@@ -282,7 +256,7 @@
     Selectr.prototype.searchInputKeyUp = function(e) {
       var newResultsList, query, resultContainer, resultData, stroke;
       stroke = e.which || e.keyCode;
-      if (isValidKeyCode(stroke)) {
+      if (this.isValidKeyCode(stroke)) {
         query = e.currentTarget.value;
         resultContainer = this.wrap.find(".selectr-results");
         if (query.length > 0) {
@@ -321,6 +295,57 @@
       }
     };
 
+    Selectr.prototype.scaleSearchField = function() {
+      var defaultStyles, div, newWidth, searchField, style, styles, val, wrapWidth, _i, _len;
+      if (this.settings.multiple) {
+        searchField = this.wrap.find(".selectr-search");
+        defaultStyles = "position:absolute;left:-1000px;top:-1000px;display:none;";
+        styles = ["font-size", "font-style", "font-weight", "font-family", "line-height", "text-transform", "letter-spacing"];
+        for (_i = 0, _len = styles.length; _i < _len; _i++) {
+          style = styles[_i];
+          defaultStyles += style + ":" + searchField.css(style) + ";";
+        }
+        div = $("<div />", {
+          "style": defaultStyles
+        });
+        val = searchField.val();
+        if (val !== "" && val.length > this.settings.placeholder.length) {
+          div.text(searchField.val());
+        } else {
+          div.text(this.settings.placeholder);
+        }
+        $("body").append(div);
+        newWidth = div.width() + 25;
+        div.remove();
+        wrapWidth = this.settings.width;
+        if (newWidth > wrapWidth - 10) {
+          newWidth = wrapWidth - 10;
+        }
+        return searchField.width(newWidth);
+      }
+    };
+
+    Selectr.prototype.focusSearchInput = function() {
+      var searchInput;
+      searchInput = this.wrap.find(".selectr-search");
+      if (!searchInput.is(":focus")) {
+        return this.wrap.find(".selectr-search").trigger("focus.selectr");
+      }
+    };
+
+    Selectr.prototype.scrollResultsToItem = function() {
+      var currentScrollTop, gutter, next, offset, resultList, selectedHeight;
+      gutter = this.settings.multiple ? 1 : 0;
+      next = this.wrap.find(".selectr-active");
+      resultList = this.wrap.find(".selectr-results");
+      currentScrollTop = resultList.scrollTop() + resultList.height();
+      selectedHeight = (next.index() + gutter) * next.height();
+      offset = selectedHeight - currentScrollTop;
+      if (selectedHeight > currentScrollTop) {
+        return resultList.scrollTop(resultList.scrollTop() + offset);
+      }
+    };
+
     Selectr.prototype.createDataModel = function() {
       var option;
       return this.originalData = this.data = (function() {
@@ -341,7 +366,7 @@
       }).call(this);
     };
 
-    Selectr.prototype.findMatchesInItem = function(item, query) {
+    Selectr.prototype.findMatches = function(item, query) {
       var match;
       if (item.text != null) {
         match = item.text.match(new RegExp(query, "ig"));
@@ -365,7 +390,9 @@
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         item = _ref[_i];
         if (item.text.match(new RegExp(query, "ig"))) {
-          _results.push(this.findMatchesInItem(item, query));
+          _results.push(this.findMatches(item, query));
+        } else {
+          _results.push(void 0);
         }
       }
       return _results;
@@ -395,7 +422,7 @@
       search = this.wrap.find(".selectr-ms-search");
       search.parent("li").before(pill);
       this.setSelectValue(val);
-      return search.focus();
+      return this.wrap.trigger("focus.selectr");
     };
 
     Selectr.prototype.removeSelection = function(pill) {
@@ -416,6 +443,7 @@
 
     Selectr.prototype.unsetSelectValue = function(val) {
       var item, opts, _i, _len, _ref, _results;
+      this.wrap.find(".selectr-active").removeClass(".selectr-active");
       this.wrap.find(".selectr-selected:contains('" + val + "')").removeClass("selectr-selected").removeClass("selectr-active");
       opts = this.select.find("option[value='" + val + "']").prop("selected", false);
       if (opts.length === 0) {
@@ -475,6 +503,7 @@
           selected: row.selected,
           disabled: row.disabled
         });
+        li.css("height", this.settings.itemHeight);
         classNames = ["selectr-item", row.value === "" ? "selectr-hidden" : "", row.selected ? "selectr-selected" : "", row.disabled ? "selectr-disabled" : ""];
         for (_i = 0, _len = classNames.length; _i < _len; _i++) {
           className = classNames[_i];
@@ -513,8 +542,8 @@
     };
 
     Selectr.prototype.getDefaultText = function() {
-      if (this.settings.hasOwnProperty("placeholder")) {
-        return this.settings["placeholder"];
+      if (this.settings.placeholder !== "") {
+        return this.settings.placeholder;
       } else if (this.select.data("placeholder")) {
         return this.select.data("placeholder");
       } else if (this.select.attr("placeholder")) {
@@ -522,7 +551,7 @@
       } else if (this.select.find("option:empty").text()) {
         return this.select.find("option:empty").text();
       } else {
-        return "Select an option";
+        return "Select an option...";
       }
     };
 
@@ -538,15 +567,15 @@
     };
 
     Selectr.prototype.createSelectrWrap = function() {
-      var dropdownWrap, msSearchInput, multiSelectWrap, noPreSelections, resultsList, searchInput, searchWrap, selectionList, toggleBtn,
+      var dropdownWrap, hasPreselections, msSearchInput, multiSelectWrap, resultsList, searchInput, searchWrap, selectionList, toggleBtn,
         _this = this;
       this.wrap = $("<div />", {
         "class": "selectr-wrap",
-        width: this.settings.width
+        style: "width: " + this.settings.wrapWidth + "; max-height: " + this.settings.wrapHeight + ";"
       });
       toggleBtn = $("<a />", {
         "class": "selectr-toggle",
-        href: "#"
+        title: "" + this.settings.placeholder
       });
       toggleBtn.append("<span></span><div><i></i></div>");
       searchInput = $("<input />", {
@@ -567,38 +596,40 @@
         "class": "selectr-ms-search selectr-search",
         autocomplete: "off",
         tabindex: this.select.attr("tabindex"),
-        width: this.settings.width - 20
+        width: this.settings.wrapWidth - 20
       });
       resultsList = this.createListFromData(this.data);
-      noPreSelections = true;
       if (this.settings.multiple) {
-        multiSelectWrap.append(selectionList.append(searchWrap.append(msSearchInput)));
+        searchWrap.append(msSearchInput);
+        selectionList.append(searchWrap);
+        multiSelectWrap.append(selectionList);
         dropdownWrap.append(resultsList);
         this.wrap.append(multiSelectWrap, dropdownWrap).addClass("selectr-multiple");
         if (this.select.val() !== "" && this.select.val().length !== 0) {
+          hasPreselections = false;
           this.select.find("option:selected").each(function(i, option) {
             var pill;
             if ($(option).val() !== "") {
-              noPreSelections = false;
+              hasPreselections = true;
               pill = _this.createSelection($(option).text(), $(option).val(), $(option).is(":selected"), $(option).is(":disabled"));
               return selectionList.prepend(pill);
             }
           });
-          this.scaleSearchField();
+          if (hasPreselections) {
+            this.scaleSearchField();
+          }
         }
       } else {
         dropdownWrap.append(searchInput, resultsList);
         this.wrap.append(toggleBtn, dropdownWrap);
       }
       this.select.hide().after(this.wrap).attr("tabindex", "-1");
-      if (noPreSelections) {
-        this.setDefaultText(this.getDefaultText());
-      }
+      this.setDefaultText(this.settings.placeholder);
       this.setTabIndex();
       return this.wrap;
     };
 
-    isValidKeyCode = function(code) {
+    Selectr.prototype.isValidKeyCode = function(code) {
       var backspaceOrDelete, isSpace, isntEnter, isntUpOrDown, validAlpha, validMath, validNumber, validPunc;
       validAlpha = code >= 65 && code <= 90;
       validNumber = code >= 48 && code <= 57;

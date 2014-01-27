@@ -65,7 +65,7 @@ $text-color: #333;
   max-height: 240px;
   -webkit-overflow-scrolling: touch;
   .selectr-label {
-    padding: 9px 6px 6px;
+    padding: 11px 6px 7px; // 30px high
     font-size: 12px;
     font-weight: bold;
     text-transform: uppercase;
@@ -106,7 +106,7 @@ $text-color: #333;
     button {
       border: 0;
       background: none;
-      padding: 7px 6px;
+      padding: 8px 6px 9px; // #30px
       margin: 0;
       width: 100%;
       display: block;

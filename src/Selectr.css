@@ -3,7 +3,7 @@
   background: url('images/icon-se0d084380d.png') no-repeat;
 }
 
-/* line 60, ../../../Ruby200/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/utilities/sprites/_base.scss */
+/* line 60, ../../../../../Library/Ruby/Gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/utilities/sprites/_base.scss */
 .icon-default, .selectr-toggle div i, .selectr-selections ul div i {
   background-position: 0 0;
   height: 22px;
@@ -81,7 +81,7 @@
 }
 /* line 67, Selectr.scss */
 .selectr-results .selectr-label {
-  padding: 9px 6px 6px;
+  padding: 11px 6px 7px;
   font-size: 12px;
   font-weight: bold;
   text-transform: uppercase;
@@ -133,7 +133,7 @@
 .selectr-results .selectr-item button {
   border: 0;
   background: none;
-  padding: 7px 6px;
+  padding: 8px 6px 9px;
   margin: 0;
   width: 100%;
   display: block;
@@ -267,7 +267,7 @@
   *zoom: 1;
   background: transparent;
 }
-/* line 38, ../../../Ruby200/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/utilities/general/_clearfix.scss */
+/* line 38, ../../../../../Library/Ruby/Gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/utilities/general/_clearfix.scss */
 .selectr-selections ul:after {
   content: "";
   display: table;

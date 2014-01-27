@@ -57,7 +57,7 @@ module.exports = function(grunt) {
       },
       coffeeSrc: {
         files: ['src/**/*.coffee'],
-        tasks: ['coffee:devSrc']
+        tasks: ['coffee:devSrc', 'docco:generate']
       },
       coffeetest: {
         files: ['test/**/*.coffee'],
@@ -119,6 +119,20 @@ module.exports = function(grunt) {
           relativeAssets: true
         }
       }
+    },
+    docco: {
+      generate: {
+        src: ['src/Selectr.coffee'],
+        options: {
+          layout: "linear" // parallel, classic, linear
+        }
+      },
+      debug: {
+        src: ['test/**/*.coffee'],
+        options: {
+          output: 'docs/test'
+        }
+      }
     }
   });
 
@@ -131,6 +145,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-compass');
   grunt.loadNpmTasks('grunt-contrib-coffee');
   grunt.loadNpmTasks('grunt-karma');
+  grunt.loadNpmTasks('grunt-docco');
+
 
 
   // Default task.
