@@ -1,6 +1,5 @@
 (function() {
-  var Selectr,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var Selectr;
 
   $.fn.extend({
     selectr: function(options) {
@@ -23,16 +22,6 @@
     function Selectr(select, providedSettings) {
       this.select = select;
       this.providedSettings = providedSettings;
-      this.selectionWrapClick = __bind(this.selectionWrapClick, this);
-      this.searchInputKeyUp = __bind(this.searchInputKeyUp, this);
-      this.searchInputKeyDown = __bind(this.searchInputKeyDown, this);
-      this.searchInputClick = __bind(this.searchInputClick, this);
-      this.searchInputFocus = __bind(this.searchInputFocus, this);
-      this.toggleBtnKeyDown = __bind(this.toggleBtnKeyDown, this);
-      this.toggleBtnClick = __bind(this.toggleBtnClick, this);
-      this.resultItemClick = __bind(this.resultItemClick, this);
-      this.handleDocumentClick = __bind(this.handleDocumentClick, this);
-      this.selectionItemClick = __bind(this.selectionItemClick, this);
       this.constructSettings();
       this.createDataModel();
       this.createSelectrWrap();
@@ -79,18 +68,37 @@
     };
 
     Selectr.prototype.bindEvents = function() {
+      var _this = this;
       this.wrap.find(".selectr-toggle").on({
-        "click.selectr": this.toggleBtnClick,
-        "keydown.selectr": this.toggleBtnKeyDown
+        "click.selectr": function(e) {
+          return _this.toggleBtnClick(e);
+        },
+        "keydown.selectr": function(e) {
+          return _this.toggleBtnKeyDown(e);
+        }
       });
-      this.wrap.find(".selectr-drop").on("click.selectr", ".selectr-item", this.resultItemClick);
+      this.wrap.find(".selectr-drop").on("click.selectr", ".selectr-item", function(e) {
+        return _this.resultItemClick(e);
+      });
       this.wrap.find(".selectr-search").on({
-        "focus.selectr": this.searchInputFocus,
-        "click.selectr": this.searchInputClick,
-        "keyup.selectr": this.searchInputKeyUp,
-        "keydown.selectr": this.searchInputKeyDown
+        "focus.selectr": function(e) {
+          return _this.searchInputFocus(e);
+        },
+        "click.selectr": function(e) {
+          return _this.searchInputClick(e);
+        },
+        "keyup.selectr": function(e) {
+          return _this.searchInputKeyUp(e);
+        },
+        "keydown.selectr": function(e) {
+          return _this.searchInputKeyDown(e);
+        }
       });
-      return this.wrap.find(".selectr-selections").on("click.selectr", this.selectionWrapClick).on("click.selectr", ".selectr-pill", this.selectionItemClick);
+      return this.wrap.find(".selectr-selections").on("click.selectr", function(e) {
+        return _this.selectionWrapClick(e);
+      }).on("click.selectr", ".selectr-pill", function(e) {
+        return _this.selectionItemClick(e);
+      });
     };
 
     Selectr.prototype.selectionItemClick = function(e) {
@@ -522,7 +530,8 @@
       });
       toggleBtn = $("<a />", {
         "class": "selectr-toggle",
-        tabindex: this.select.attr("tabindex") || ""
+        tabindex: this.select.attr("tabindex") || "",
+        href: "#"
       });
       toggleBtn.append("<span></span><div><i></i></div>");
       searchInput = $("<input />", {

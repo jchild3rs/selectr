@@ -1,6 +1,6 @@
 $.fn.extend
-  selectr: (options) ->
-    this.each -> $(this).data "selectr", new Selectr($(this), options)
+  selectr: (options) -> this.each ->
+    $(this).data "selectr", new Selectr $(this), options
 
 class Selectr
 
@@ -52,31 +52,32 @@ class Selectr
   # Event binding
   bindEvents: ->
     @wrap.find(".selectr-toggle").on
-      "click.selectr": @toggleBtnClick
-      "keydown.selectr": @toggleBtnKeyDown
-    @wrap.find(".selectr-drop").on "click.selectr", ".selectr-item", @resultItemClick
+      "click.selectr": (e) => @toggleBtnClick(e)
+      "keydown.selectr": (e) =>  @toggleBtnKeyDown(e)
+    @wrap.find(".selectr-drop")
+      .on "click.selectr", ".selectr-item", (e) => @resultItemClick(e)
     @wrap.find(".selectr-search").on
-      "focus.selectr": @searchInputFocus
-      "click.selectr": @searchInputClick
-      "keyup.selectr": @searchInputKeyUp
-      "keydown.selectr": @searchInputKeyDown
+      "focus.selectr": (e) => @searchInputFocus(e)
+      "click.selectr": (e) => @searchInputClick(e)
+      "keyup.selectr": (e) => @searchInputKeyUp(e)
+      "keydown.selectr": (e) => @searchInputKeyDown(e)
     @wrap.find(".selectr-selections")
-      .on("click.selectr", @selectionWrapClick)
-      .on("click.selectr", ".selectr-pill", @selectionItemClick)
+      .on("click.selectr", (e) => @selectionWrapClick(e))
+      .on("click.selectr", ".selectr-pill", (e) => @selectionItemClick(e))
 
-  selectionItemClick: (e) =>
+  selectionItemClick: (e) ->
     e.preventDefault()
     e.stopPropagation()
     @removeSelection($(e.currentTarget))
 
-  handleDocumentClick: (e) =>
+  handleDocumentClick: (e) ->
     if e.currentTarget is document and @wrap.find(".selectr-drop").is ":visible"
       @hideAllDropDowns()
       $(document).off("click.selectr", @handleDocumentClick)
     e.preventDefault()
     e.stopPropagation()
 
-  resultItemClick: (e) =>
+  resultItemClick: (e) ->
     @wrap.find(".selectr-active").removeClass("selectr-active")
     $(e.currentTarget).addClass("selectr-active")
     @makeSelection()
@@ -84,7 +85,7 @@ class Selectr
     e.preventDefault()
 
   # Toggle button
-  toggleBtnClick: (e) =>
+  toggleBtnClick: (e) ->
     unless @wrap.find(".selectr-drop").is ":visible"
       @showDropDown()
       @focusSearchInput()
@@ -93,7 +94,7 @@ class Selectr
     e.stopPropagation()
     e.preventDefault()
 
-  toggleBtnKeyDown: (e) =>
+  toggleBtnKeyDown: (e) ->
     stroke = e.which or e.keyCode
     # If is down arrow or enter, show drop down
     if stroke is 40 or stroke is 13
@@ -101,7 +102,7 @@ class Selectr
       @focusSearchInput()
 
   # Seach button
-  searchInputFocus: (e) =>
+  searchInputFocus: (e) ->
     if @settings.multiple
       @showDropDown()
       @scaleSearchField()
@@ -125,11 +126,11 @@ class Selectr
       newWidth = wrapWidth - 10 if newWidth > wrapWidth - 10
       searchField.width(newWidth)
 
-  searchInputClick: (e) =>
+  searchInputClick: (e) ->
     e.preventDefault()
     e.stopPropagation()
 
-  searchInputKeyDown: (e) =>
+  searchInputKeyDown: (e) ->
     stroke = e.which or e.keyCode
     query = e.currentTarget.value
     selected = @wrap.find(".selectr-active")
@@ -206,7 +207,7 @@ class Selectr
     if selectedHeight > currentScrollTop
       resultList.scrollTop(resultList.scrollTop() + offset)
 
-  searchInputKeyUp: (e) =>
+  searchInputKeyUp: (e) ->
     stroke = e.which || e.keyCode
     if isValidKeyCode(stroke)
       query = e.currentTarget.value
@@ -238,7 +239,7 @@ class Selectr
   ###
   If multiple, we want to focus the input when the user
   clicks on the wrap. The input will have a variable width. ###
-  selectionWrapClick: (e) =>
+  selectionWrapClick: (e) ->
     if @settings.multiple
       @focusSearchInput()
       e.preventDefault()
@@ -391,8 +392,10 @@ class Selectr
 
   createSelectrWrap: ->
     @wrap = $("<div />", class: "selectr-wrap", width: @settings.width)
-    toggleBtn = $("<a />",
-      class: "selectr-toggle", tabindex: @select.attr("tabindex") or "")
+    toggleBtn = $ "<a />",
+      class: "selectr-toggle"
+      tabindex: @select.attr("tabindex") or ""
+      href: "#"
     toggleBtn.append("<span></span><div><i></i></div>")
     searchInput = $("<input />",
       class: "selectr-search", type: "text", autocomplete: "off")
