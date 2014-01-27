@@ -37,9 +37,9 @@
       return this.settings.placeholder = this.getDefaultText();
     };
 
-    Selectr.prototype.showDropDown = function() {
+    Selectr.prototype.dropDownShow = function() {
       var _this = this;
-      this.hideAllDropDowns();
+      this.dropDownHide();
       this.wrap.addClass("selectr-open");
       this.wrap.find(".selectr-drop").show();
       this.focusFirstItem();
@@ -52,19 +52,13 @@
       });
     };
 
-    Selectr.prototype.focusFirstItem = function() {
-      if (this.wrap.find(".selectr-active").length === 0) {
-        return this.wrap.find(".selectr-item").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
-      }
-    };
-
-    Selectr.prototype.hideAllDropDowns = function() {
+    Selectr.prototype.dropDownHide = function() {
       if ($(".selectr-open").length > 0) {
         return $(".selectr-open").removeClass("selectr-open").find(".selectr-drop").hide();
       }
     };
 
-    Selectr.prototype.resetDropDown = function() {
+    Selectr.prototype.dropDownReset = function() {
       var newResultsList;
       newResultsList = this.createListFromData(this.originalData);
       this.wrap.find(".selectr-results").replaceWith(newResultsList);
@@ -113,7 +107,7 @@
 
     Selectr.prototype.handleDocumentClick = function(e) {
       if (e.currentTarget === document && this.wrap.find(".selectr-drop").is(":visible")) {
-        this.hideAllDropDowns();
+        this.dropDownHide();
         $(document).off("click.selectr");
       }
       e.preventDefault();
@@ -130,10 +124,10 @@
 
     Selectr.prototype.wrapClick = function(e) {
       if (!this.wrap.find(".selectr-drop").is(":visible")) {
-        this.showDropDown();
+        this.dropDownShow();
         this.focusSearchInput();
       } else {
-        this.hideAllDropDowns();
+        this.dropDownHide();
       }
       e.stopPropagation();
       return e.preventDefault();
@@ -144,7 +138,7 @@
       stroke = e.which || e.keyCode;
       if (!this.wrap.find(".selectr-drop").is(":visible")) {
         if (stroke === 40) {
-          this.showDropDown();
+          this.dropDownShow();
           this.focusSearchInput();
           e.preventDefault();
           return e.stopPropagation();
@@ -154,7 +148,7 @@
 
     Selectr.prototype.searchInputFocus = function(e) {
       if (this.settings.multiple) {
-        this.showDropDown();
+        this.dropDownShow();
       }
       e.preventDefault();
       return e.stopPropagation();
@@ -177,12 +171,12 @@
       switch (stroke) {
         case 9:
           if (drop.is(":visible")) {
-            this.hideAllDropDowns();
+            this.dropDownHide();
             this.wrap.focus();
           }
           break;
         case 27:
-          this.hideAllDropDowns();
+          this.dropDownHide();
           this.wrap.focus();
           break;
         case 38:
@@ -203,7 +197,7 @@
           break;
         case 40:
           if (this.settings.multiple) {
-            this.showDropDown();
+            this.dropDownShow();
           }
           if (!hasSelection) {
             this.wrap.find(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
@@ -221,7 +215,7 @@
           if (hasSelection) {
             this.makeSelection();
             this.wrap.find(".selectr-search").val("");
-            this.resetDropDown();
+            this.dropDownReset();
             this.focusFirstItem();
             this.scrollResultsToItem();
           }
@@ -270,13 +264,13 @@
           this.wrap.find(".selectr-label").hide();
           this.wrap.find(".selectr-label ~ .selectr-item:visible").prev().show();
           if (!this.wrap.find(".selectr-drop").is(":visible")) {
-            this.showDropDown();
+            this.dropDownShow();
           }
         } else {
-          this.resetDropDown();
+          this.dropDownReset();
         }
         if (!this.wrap.find(".selectr-drop").is(":visible")) {
-          return this.showDropDown();
+          return this.dropDownShow();
         }
       }
     };
@@ -330,6 +324,12 @@
       searchInput = this.wrap.find(".selectr-search");
       if (!searchInput.is(":focus")) {
         return this.wrap.find(".selectr-search").trigger("focus.selectr");
+      }
+    };
+
+    Selectr.prototype.focusFirstItem = function() {
+      if (this.wrap.find(".selectr-active").length === 0) {
+        return this.wrap.find(".selectr-item").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
       }
     };
 
@@ -391,8 +391,6 @@
         item = _ref[_i];
         if (item.text.match(new RegExp(query, "ig"))) {
           _results.push(this.findMatches(item, query));
-        } else {
-          _results.push(void 0);
         }
       }
       return _results;
@@ -406,7 +404,7 @@
       } else {
         this.wrap.find(".selectr-toggle span").text(selectedItem.text());
         this.setSelectValue(selectedItem.data("value"));
-        return this.hideAllDropDowns();
+        return this.dropDownHide();
       }
     };
 
@@ -567,11 +565,13 @@
     };
 
     Selectr.prototype.createSelectrWrap = function() {
-      var dropdownWrap, hasPreselections, msSearchInput, multiSelectWrap, resultsList, searchInput, searchWrap, selectionList, toggleBtn,
+      var dropdownWrap, hasPreselections, msSearchInput, multiSelectWrap, resultsList, searchInput, searchWrap, selectionList, toggleBtn, wrapStyles,
         _this = this;
+      wrapStyles = "width: " + this.settings.wrapWidth + "px;";
+      wrapStyles += "max-height: " + (parseInt(this.settings.wrapHeight, 10)) + "px;";
       this.wrap = $("<div />", {
         "class": "selectr-wrap",
-        style: "width: " + this.settings.wrapWidth + "; max-height: " + this.settings.wrapHeight + ";"
+        style: wrapStyles
       });
       toggleBtn = $("<a />", {
         "class": "selectr-toggle",

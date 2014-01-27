@@ -21,55 +21,56 @@
 
       
         
-        
-        
-      
-        
-        <p><b>Expose to jQuery</b></p>
+        <h2 id="expose-to-jquery">Expose to jQuery</h2>
+<p>Loops through each jQuery selection and returns <code>this</code>
+for chainability. Creates and applies a new instance
+of Selectr as a data attribute accessible via:
+<code>$(&quot;#your-select&quot;).data(&quot;selectr&quot;)</code></p>
 
         
-      
-        
-        <p>Loops through each jQuery selection and applies a new instance of Selectr as a data attribute.</p>
-
-        
-          <div class='highlight'><pre>$.fn.extend
+          <div class='highlight'><pre>
+$.fn.extend
   <span class="hljs-attribute">selectr</span>: <span class="hljs-function"><span class="hljs-params">(options)</span> -&gt;</span>
-    <span class="hljs-keyword">this</span>.each<span class="hljs-function"> -&gt;</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.each<span class="hljs-function"> -&gt;</span>
       $(<span class="hljs-keyword">this</span>).data <span class="hljs-string">"selectr"</span>, <span class="hljs-keyword">new</span> Selectr $(<span class="hljs-keyword">this</span>), options</pre></div>
         
       
         
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit,</p>
+        <h2 id="selectr-class-definition">Selectr Class definition</h2>
+<p>As you can see in the constructor below, gets passed the
+select element, and the user provided settings via the
+jQuery exposure above.</p>
 
         
-          <div class='highlight'><pre><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Selectr</span></span></pre></div>
-        
-      
-        
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit,
-ed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco
-laboris nisi ut aliquip ex ea commodo consequat.</p>
+          <div class='highlight'><pre><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Selectr</span></span>
 
-        
-          <div class='highlight'><pre>
   <span class="hljs-attribute">constructor</span>: <span class="hljs-function"><span class="hljs-params">(<span class="hljs-property">@select</span>, <span class="hljs-property">@providedSettings</span>)</span> -&gt;</span>
     <span class="hljs-property">@constructSettings</span>()
     <span class="hljs-property">@createDataModel</span>()
     <span class="hljs-property">@createSelectrWrap</span>()
-    <span class="hljs-property">@bindEvents</span>()
+    <span class="hljs-property">@bindEvents</span>()</pre></div>
+        
+      
+        
+        <p>These default settings are used if no settings are provided.</p>
 
-
-  <span class="hljs-attribute">defaultSettings</span>:
+        
+          <div class='highlight'><pre>  <span class="hljs-attribute">defaultSettings</span>:
     <span class="hljs-attribute">wrapWidth</span>: <span class="hljs-number">250</span>
     <span class="hljs-attribute">wrapHeight</span>: <span class="hljs-number">200</span>
     <span class="hljs-attribute">itemHeight</span>: <span class="hljs-number">30</span>
     <span class="hljs-attribute">multiple</span>: <span class="hljs-literal">false</span>
     <span class="hljs-attribute">tabindex</span>: -<span class="hljs-number">1</span>
-    <span class="hljs-attribute">placeholder</span>: <span class="hljs-string">""</span>
+    <span class="hljs-attribute">placeholder</span>: <span class="hljs-string">""</span></pre></div>
+        
+      
+        
+        <p>Merge the default options with the options provided by the user
+and set the multiple, tabindex, and placeholder values. It exposes
+everything to <code>@settings</code>, which is accessibile in all local methods.</p>
 
-  <span class="hljs-attribute">constructSettings</span>:<span class="hljs-function"> -&gt;</span>
+        
+          <div class='highlight'><pre>  <span class="hljs-attribute">constructSettings</span>:<span class="hljs-function"> -&gt;</span>
     <span class="hljs-property">@settings</span> = $.extend({}, <span class="hljs-property">@defaultSettings</span>, <span class="hljs-property">@providedSettings</span>)
     <span class="hljs-property">@settings</span>.multiple = <span class="hljs-literal">true</span> <span class="hljs-keyword">if</span> <span class="hljs-property">@select</span>.attr <span class="hljs-string">"multiple"</span>
     <span class="hljs-property">@settings</span>.tabindex = <span class="hljs-property">@select</span>.attr <span class="hljs-string">"tabindex"</span>
@@ -77,11 +78,12 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
         
       
         
-        <p>Dropdowns</p>
+        <p><b>Dropdowns</b><br/>
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod.</p>
 
         
-          <div class='highlight'><pre>  <span class="hljs-attribute">showDropDown</span>:<span class="hljs-function"> -&gt;</span>
-    <span class="hljs-property">@hideAllDropDowns</span>()
+          <div class='highlight'><pre>  <span class="hljs-attribute">dropDownShow</span>:<span class="hljs-function"> -&gt;</span>
+    <span class="hljs-property">@dropDownHide</span>()
     <span class="hljs-property">@wrap</span>.addClass(<span class="hljs-string">"selectr-open"</span>)
     <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-drop"</span>).show()
     <span class="hljs-property">@focusFirstItem</span>()
@@ -89,13 +91,7 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
     <span class="hljs-property">@scaleSearchField</span>() <span class="hljs-keyword">if</span> <span class="hljs-property">@settings</span>.multiple
     $<span class="hljs-function"><span class="hljs-params">(<span class="hljs-built_in">document</span>)</span>.<span class="hljs-title">on</span><span class="hljs-params">(<span class="hljs-string">"click.selectr"</span>, (e) =&gt; <span class="hljs-property">@handleDocumentClick</span>(e))</span>
 
-  <span class="hljs-title">focusFirstItem</span>: -&gt;</span>
-    <span class="hljs-keyword">if</span> <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-active"</span>).length <span class="hljs-keyword">is</span> <span class="hljs-number">0</span>
-      <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-item"</span>)
-      .<span class="hljs-keyword">not</span>(<span class="hljs-string">".selectr-selected, .selectr-disabled"</span>)
-      .first().addClass(<span class="hljs-string">"selectr-active"</span>)
-
-  <span class="hljs-attribute">hideAllDropDowns</span>:<span class="hljs-function"> -&gt;</span></pre></div>
+  <span class="hljs-title">dropDownHide</span>: -&gt;</span></pre></div>
         
       
         
@@ -107,7 +103,7 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
         .removeClass(<span class="hljs-string">"selectr-open"</span>)
         .find(<span class="hljs-string">".selectr-drop"</span>).hide()
 
-  <span class="hljs-attribute">resetDropDown</span>:<span class="hljs-function"> -&gt;</span>
+  <span class="hljs-attribute">dropDownReset</span>:<span class="hljs-function"> -&gt;</span>
     newResultsList = <span class="hljs-property">@createListFromData</span>(<span class="hljs-property">@originalData</span>)
     <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-results"</span>).replaceWith(newResultsList)
     <span class="hljs-property">@wrap</span>.trigger(<span class="hljs-string">"focus.selectr"</span>)</pre></div>
@@ -140,7 +136,7 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
   <span class="hljs-attribute">handleDocumentClick</span>: <span class="hljs-function"><span class="hljs-params">(e)</span> -&gt;</span>
     <span class="hljs-keyword">if</span> e.currentTarget <span class="hljs-keyword">is</span> <span class="hljs-built_in">document</span> <span class="hljs-keyword">and</span>
     <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-drop"</span>).<span class="hljs-keyword">is</span> <span class="hljs-string">":visible"</span>
-      <span class="hljs-property">@hideAllDropDowns</span>()
+      <span class="hljs-property">@dropDownHide</span>()
       $(<span class="hljs-built_in">document</span>).<span class="hljs-literal">off</span>(<span class="hljs-string">"click.selectr"</span>)
     e.preventDefault()
     e.stopPropagation()
@@ -159,10 +155,10 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
         
           <div class='highlight'><pre>  <span class="hljs-attribute">wrapClick</span>: <span class="hljs-function"><span class="hljs-params">(e)</span> -&gt;</span>
     <span class="hljs-keyword">unless</span> <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-drop"</span>).<span class="hljs-keyword">is</span> <span class="hljs-string">":visible"</span>
-      <span class="hljs-property">@showDropDown</span>()
+      <span class="hljs-property">@dropDownShow</span>()
       <span class="hljs-property">@focusSearchInput</span>()
     <span class="hljs-keyword">else</span>
-      <span class="hljs-property">@hideAllDropDowns</span>()
+      <span class="hljs-property">@dropDownHide</span>()
     e.stopPropagation()
     e.preventDefault()
 
@@ -170,7 +166,7 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
     stroke = e.which <span class="hljs-keyword">or</span> e.keyCode
     <span class="hljs-keyword">unless</span> <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-drop"</span>).<span class="hljs-keyword">is</span> <span class="hljs-string">":visible"</span>
       <span class="hljs-keyword">if</span> stroke <span class="hljs-keyword">is</span> <span class="hljs-number">40</span>
-        <span class="hljs-property">@showDropDown</span>()
+        <span class="hljs-property">@dropDownShow</span>()
         <span class="hljs-property">@focusSearchInput</span>()
         e.preventDefault()
         e.stopPropagation()</pre></div>
@@ -181,7 +177,7 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
 
         
           <div class='highlight'><pre>  <span class="hljs-attribute">searchInputFocus</span>: <span class="hljs-function"><span class="hljs-params">(e)</span> -&gt;</span>
-    <span class="hljs-property">@showDropDown</span>() <span class="hljs-keyword">if</span> <span class="hljs-property">@settings</span>.multiple
+    <span class="hljs-property">@dropDownShow</span>() <span class="hljs-keyword">if</span> <span class="hljs-property">@settings</span>.multiple
     e.preventDefault()
     e.stopPropagation()
 
@@ -203,11 +199,11 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
 
       <span class="hljs-keyword">when</span> <span class="hljs-number">9</span> <span class="hljs-comment"># tab</span>
         <span class="hljs-keyword">if</span> drop.<span class="hljs-keyword">is</span>(<span class="hljs-string">":visible"</span>)
-          <span class="hljs-property">@hideAllDropDowns</span>()
+          <span class="hljs-property">@dropDownHide</span>()
           <span class="hljs-property">@wrap</span>.focus()
 
       <span class="hljs-keyword">when</span> <span class="hljs-number">27</span> <span class="hljs-comment"># esc</span>
-        <span class="hljs-property">@hideAllDropDowns</span>()
+        <span class="hljs-property">@dropDownHide</span>()
         <span class="hljs-property">@wrap</span>.focus()
 
       <span class="hljs-keyword">when</span> <span class="hljs-number">38</span> <span class="hljs-comment"># up</span>
@@ -229,7 +225,7 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
 
       <span class="hljs-keyword">when</span> <span class="hljs-number">40</span> <span class="hljs-comment"># down</span>
         <span class="hljs-keyword">if</span> <span class="hljs-property">@settings</span>.multiple
-          <span class="hljs-property">@showDropDown</span>()
+          <span class="hljs-property">@dropDownShow</span>()
 
         <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> hasSelection
           <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-item:visible"</span>)
@@ -250,7 +246,7 @@ laboris nisi ut aliquip ex ea commodo consequat.</p>
         <span class="hljs-keyword">if</span> hasSelection
           <span class="hljs-property">@makeSelection</span>()
           <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-search"</span>).val(<span class="hljs-string">""</span>)
-          <span class="hljs-property">@resetDropDown</span>()
+          <span class="hljs-property">@dropDownReset</span>()
           <span class="hljs-property">@focusFirstItem</span>()
           <span class="hljs-property">@scrollResultsToItem</span>()
         e.preventDefault()
@@ -312,7 +308,7 @@ hacky, but works for now.</p>
         <p>show results if not aleady visible</p>
 
         
-          <div class='highlight'><pre>        <span class="hljs-property">@showDropDown</span>() <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-drop"</span>).<span class="hljs-keyword">is</span>(<span class="hljs-string">":visible"</span>)
+          <div class='highlight'><pre>        <span class="hljs-property">@dropDownShow</span>() <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-drop"</span>).<span class="hljs-keyword">is</span>(<span class="hljs-string">":visible"</span>)
       <span class="hljs-keyword">else</span></pre></div>
         
       
@@ -320,14 +316,14 @@ hacky, but works for now.</p>
         <p>reset list</p>
 
         
-          <div class='highlight'><pre>        <span class="hljs-property">@resetDropDown</span>()</pre></div>
+          <div class='highlight'><pre>        <span class="hljs-property">@dropDownReset</span>()</pre></div>
         
       
         
         <p>show results if not aleady visible</p>
 
         
-          <div class='highlight'><pre>      <span class="hljs-property">@showDropDown</span>() <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-drop"</span>).<span class="hljs-keyword">is</span>(<span class="hljs-string">":visible"</span>)</pre></div>
+          <div class='highlight'><pre>      <span class="hljs-property">@dropDownShow</span>() <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-drop"</span>).<span class="hljs-keyword">is</span>(<span class="hljs-string">":visible"</span>)</pre></div>
         
       
         
@@ -379,6 +375,12 @@ hacky, but works for now.</p>
     <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> searchInput.<span class="hljs-keyword">is</span>(<span class="hljs-string">":focus"</span>)
       <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-search"</span>).trigger(<span class="hljs-string">"focus.selectr"</span>)
 
+  <span class="hljs-attribute">focusFirstItem</span>:<span class="hljs-function"> -&gt;</span>
+    <span class="hljs-keyword">if</span> <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-active"</span>).length <span class="hljs-keyword">is</span> <span class="hljs-number">0</span>
+      <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-item"</span>)
+      .<span class="hljs-keyword">not</span>(<span class="hljs-string">".selectr-selected, .selectr-disabled"</span>)
+      .first().addClass(<span class="hljs-string">"selectr-active"</span>)
+
   <span class="hljs-attribute">scrollResultsToItem</span>:<span class="hljs-function"> -&gt;</span>
     gutter = <span class="hljs-keyword">if</span> <span class="hljs-property">@settings</span>.multiple <span class="hljs-keyword">then</span> <span class="hljs-number">1</span> <span class="hljs-keyword">else</span> <span class="hljs-number">0</span>
     next = <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-active"</span>)
@@ -417,13 +419,13 @@ hacky, but works for now.</p>
         }
 
   <span class="hljs-attribute">searchDataModel</span>: <span class="hljs-function"><span class="hljs-params">(query)</span> -&gt;</span>
-    <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> <span class="hljs-property">@data</span>
-      <span class="hljs-keyword">if</span> item.text.match <span class="hljs-keyword">new</span> RegExp(query, <span class="hljs-string">"ig"</span>)
-        <span class="hljs-property">@findMatches</span>(item, query)</pre></div>
+    <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> <span class="hljs-property">@data</span> <span class="hljs-keyword">when</span> item.text.match <span class="hljs-keyword">new</span> RegExp(query, <span class="hljs-string">"ig"</span>)
+      <span class="hljs-property">@findMatches</span>(item, query)</pre></div>
         
       
         
-        <p>Multi-select</p>
+        <p>This method is a proxy for both regular and multiple instances
+to fire when a user makes a selection.</p>
 
         
           <div class='highlight'><pre>  <span class="hljs-attribute">makeSelection</span>:<span class="hljs-function"> -&gt;</span>
@@ -433,7 +435,7 @@ hacky, but works for now.</p>
     <span class="hljs-keyword">else</span>
       <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-toggle span"</span>).text selectedItem.text()
       <span class="hljs-property">@setSelectValue</span>(selectedItem.data(<span class="hljs-string">"value"</span>))
-      <span class="hljs-property">@hideAllDropDowns</span>()
+      <span class="hljs-property">@dropDownHide</span>()
 
   <span class="hljs-attribute">addSelection</span>:<span class="hljs-function"> -&gt;</span>
     selectedItem = <span class="hljs-property">@wrap</span>.find(<span class="hljs-string">".selectr-item.selectr-active"</span>)
@@ -581,9 +583,11 @@ hacky, but works for now.</p>
       @wrap[0].tabIndex = tabindex
 
   createSelectrWrap: -&gt;
+    wrapStyles = "width: #{@settings.wrapWidth}px;"
+    wrapStyles += "max-height: #{parseInt(@settings.wrapHeight, 10)}px;"
     @wrap = $ "&lt;div /&gt;",
       class: "selectr-wrap",
-      style: "width: #{@settings.wrapWidth}; max-height: #{@settings.wrapHeight};"
+      style: wrapStyles
     toggleBtn = $ "&lt;a /&gt;",
       class: "selectr-toggle"
       title: "#{@settings.placeholder}"

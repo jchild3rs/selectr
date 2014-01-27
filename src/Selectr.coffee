@@ -1,19 +1,19 @@
+# ## Expose to jQuery
+# Loops through each jQuery selection and returns `this`
+# for chainability. Creates and applies a new instance
+# of Selectr as a data attribute accessible via:
+# `$("#your-select").data("selectr")`
 
-# <b>Expose to jQuery</b>
-
-# Loops through each jQuery selection and applies a new instance of Selectr as a data attribute.
 $.fn.extend
   selectr: (options) ->
-    this.each ->
+    return this.each ->
       $(this).data "selectr", new Selectr $(this), options
 
-# Lorem ipsum dolor sit amet, consectetur adipisicing elit,
+# ## Selectr Class definition
+# As you can see in the constructor below, gets passed the
+# select element, and the user provided settings via the
+# jQuery exposure above.
 class Selectr
-
-  # Lorem ipsum dolor sit amet, consectetur adipisicing elit,
-  # ed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-  # Ut enim ad minim veniam, quis nostrud exercitation ullamco
-  # laboris nisi ut aliquip ex ea commodo consequat.
 
   constructor: (@select, @providedSettings) ->
     @constructSettings()
@@ -21,7 +21,7 @@ class Selectr
     @createSelectrWrap()
     @bindEvents()
 
-
+  # These default settings are used if no settings are provided.
   defaultSettings:
     wrapWidth: 250
     wrapHeight: 200
@@ -30,15 +30,19 @@ class Selectr
     tabindex: -1
     placeholder: ""
 
+  # Merge the default options with the options provided by the user
+  # and set the multiple, tabindex, and placeholder values. It exposes
+  # everything to `@settings`, which is accessibile in all local methods.
   constructSettings: ->
     @settings = $.extend({}, @defaultSettings, @providedSettings)
     @settings.multiple = true if @select.attr "multiple"
     @settings.tabindex = @select.attr "tabindex"
     @settings.placeholder = @getDefaultText()
 
-  # Dropdowns
-  showDropDown: ->
-    @hideAllDropDowns()
+  # <b>Dropdowns</b><br/>
+  # Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod.
+  dropDownShow: ->
+    @dropDownHide()
     @wrap.addClass("selectr-open")
     @wrap.find(".selectr-drop").show()
     @focusFirstItem()
@@ -46,20 +50,14 @@ class Selectr
     @scaleSearchField() if @settings.multiple
     $(document).on("click.selectr", (e) => @handleDocumentClick(e))
 
-  focusFirstItem: ->
-    if @wrap.find(".selectr-active").length is 0
-      @wrap.find(".selectr-item")
-      .not(".selectr-selected, .selectr-disabled")
-      .first().addClass("selectr-active")
-
-  hideAllDropDowns: ->
+  dropDownHide: ->
     # Always hide all instances for now.
     if $(".selectr-open").length > 0
       $(".selectr-open")
         .removeClass("selectr-open")
         .find(".selectr-drop").hide()
 
-  resetDropDown: ->
+  dropDownReset: ->
     newResultsList = @createListFromData(@originalData)
     @wrap.find(".selectr-results").replaceWith(newResultsList)
     @wrap.trigger("focus.selectr")
@@ -88,7 +86,7 @@ class Selectr
   handleDocumentClick: (e) ->
     if e.currentTarget is document and
     @wrap.find(".selectr-drop").is ":visible"
-      @hideAllDropDowns()
+      @dropDownHide()
       $(document).off("click.selectr")
     e.preventDefault()
     e.stopPropagation()
@@ -103,10 +101,10 @@ class Selectr
   # Wrap events
   wrapClick: (e) ->
     unless @wrap.find(".selectr-drop").is ":visible"
-      @showDropDown()
+      @dropDownShow()
       @focusSearchInput()
     else
-      @hideAllDropDowns()
+      @dropDownHide()
     e.stopPropagation()
     e.preventDefault()
 
@@ -114,14 +112,14 @@ class Selectr
     stroke = e.which or e.keyCode
     unless @wrap.find(".selectr-drop").is ":visible"
       if stroke is 40
-        @showDropDown()
+        @dropDownShow()
         @focusSearchInput()
         e.preventDefault()
         e.stopPropagation()
 
   # Seach button
   searchInputFocus: (e) ->
-    @showDropDown() if @settings.multiple
+    @dropDownShow() if @settings.multiple
     e.preventDefault()
     e.stopPropagation()
 
@@ -143,11 +141,11 @@ class Selectr
 
       when 9 # tab
         if drop.is(":visible")
-          @hideAllDropDowns()
+          @dropDownHide()
           @wrap.focus()
 
       when 27 # esc
-        @hideAllDropDowns()
+        @dropDownHide()
         @wrap.focus()
 
       when 38 # up
@@ -169,7 +167,7 @@ class Selectr
 
       when 40 # down
         if @settings.multiple
-          @showDropDown()
+          @dropDownShow()
 
         if not hasSelection
           @wrap.find(".selectr-item:visible")
@@ -190,7 +188,7 @@ class Selectr
         if hasSelection
           @makeSelection()
           @wrap.find(".selectr-search").val("")
-          @resetDropDown()
+          @dropDownReset()
           @focusFirstItem()
           @scrollResultsToItem()
         e.preventDefault()
@@ -239,13 +237,13 @@ class Selectr
         @wrap.find(".selectr-label ~ .selectr-item:visible").prev().show()
 
         # show results if not aleady visible
-        @showDropDown() if not @wrap.find(".selectr-drop").is(":visible")
+        @dropDownShow() if not @wrap.find(".selectr-drop").is(":visible")
       else
         # reset list
-        @resetDropDown()
+        @dropDownReset()
 
       # show results if not aleady visible
-      @showDropDown() if not @wrap.find(".selectr-drop").is(":visible")
+      @dropDownShow() if not @wrap.find(".selectr-drop").is(":visible")
 
   ###
   If multiple, we want to focus the input when the user
@@ -287,6 +285,12 @@ class Selectr
     if not searchInput.is(":focus")
       @wrap.find(".selectr-search").trigger("focus.selectr")
 
+  focusFirstItem: ->
+    if @wrap.find(".selectr-active").length is 0
+      @wrap.find(".selectr-item")
+      .not(".selectr-selected, .selectr-disabled")
+      .first().addClass("selectr-active")
+
   scrollResultsToItem: ->
     gutter = if @settings.multiple then 1 else 0
     next = @wrap.find(".selectr-active")
@@ -321,11 +325,11 @@ class Selectr
         }
 
   searchDataModel: (query) ->
-    for item in @data
-      if item.text.match new RegExp(query, "ig")
-        @findMatches(item, query)
+    for item in @data when item.text.match new RegExp(query, "ig")
+      @findMatches(item, query)
 
-  # Multi-select
+  # This method is a proxy for both regular and multiple instances
+  # to fire when a user makes a selection.
   makeSelection: ->
     selectedItem = @wrap.find(".selectr-active")
     if @settings.multiple
@@ -333,7 +337,7 @@ class Selectr
     else
       @wrap.find(".selectr-toggle span").text selectedItem.text()
       @setSelectValue(selectedItem.data("value"))
-      @hideAllDropDowns()
+      @dropDownHide()
 
   addSelection: ->
     selectedItem = @wrap.find(".selectr-item.selectr-active")
@@ -457,9 +461,11 @@ class Selectr
       @wrap[0].tabIndex = tabindex
 
   createSelectrWrap: ->
+    wrapStyles = "width: #{@settings.wrapWidth}px;"
+    wrapStyles += "max-height: #{parseInt(@settings.wrapHeight, 10)}px;"
     @wrap = $ "<div />",
       class: "selectr-wrap",
-      style: "width: #{@settings.wrapWidth}; max-height: #{@settings.wrapHeight};"
+      style: wrapStyles
     toggleBtn = $ "<a />",
       class: "selectr-toggle"
       title: "#{@settings.placeholder}"
