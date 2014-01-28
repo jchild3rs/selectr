@@ -155,6 +155,7 @@ class Selectr
 
   # Keydown handler for the search input. Keydown has
   # been designated for behavior logic. (keyup for search)
+  # Each button has been broken out into it's own function.
   searchInputKeyDown: (e) ->
     @scaleSearchField()
     switch e.which or e.keyCode
@@ -173,10 +174,12 @@ class Selectr
       else
         break
 
+  # TAB key press handler for search input.
   searchInputTabPress: ->
     @dropDownHide()
     @wrap.focus()
 
+  # ENTER key press handler for search input.
   searchInputEnterPress: (e) ->
     selected = @wrap.find(".selectr-active")
     hasSelection = selected.length isnt 0
@@ -188,6 +191,7 @@ class Selectr
       @scrollResultsToItem()
     e.preventDefault()
 
+  # DOWN key press handler for search input.
   searchInputDownArrowPress: (e) ->
     selected = @wrap.find(".selectr-active")
     hasSelection = selected.length isnt 0
@@ -208,6 +212,7 @@ class Selectr
 
     e.preventDefault()
 
+  # UP key press handler for search input.
   searchInputUpArrowPress: (e) ->
     selected = @wrap.find(".selectr-active")
     hasSelection = selected.length isnt 0
@@ -227,11 +232,13 @@ class Selectr
           (selectedHeight) - offset))
     e.preventDefault()
 
+  # ESC key press handler for search input.
   searchInputUpEscPress: (e) ->
     @dropDownHide()
     @wrap.focus()
     e.preventDefault()
 
+  # BACKSPACE/DELETE key press handler for search input.
   searchInputUpDeletePress: (e) ->
     query = e.currentTarget.value
     if (@settings.multiple and query.length is 0) and
@@ -239,18 +246,8 @@ class Selectr
       @removeSelection(@wrap.find(".selectr-pill").last())
       e.preventDefault()
 
-
-  scrollResultsToItem: ->
-    gutter = if @settings.multiple then 1 else 0
-    next = @wrap.find(".selectr-active")
-    resultList = @wrap.find(".selectr-results")
-    currentScrollTop = resultList.scrollTop() + resultList.outerHeight()
-    selectedHeight = (next.index() + gutter) * next.outerHeight()
-#!    selectedHeight = (next.position().top) + next.outerHeight()
-    offset = selectedHeight - currentScrollTop
-    if selectedHeight > currentScrollTop
-      resultList.scrollTop(resultList.scrollTop() + offset)
-
+  # Key up handler for search input. Used to search against 
+  # the data model and then display the new results.
   searchInputKeyUp: (e) ->
     stroke = e.which || e.keyCode
     if @isValidKeyCode(stroke)
@@ -280,19 +277,37 @@ class Selectr
       # show results if not aleady visible
       @dropDownShow() if not @wrap.find(".selectr-drop").is(":visible")
 
-
-  # If multiple, we want to focus the input when the user
-  # clicks on the wrap. The input will have a variable width.
+  # We want to focus the input when the user clicks on the wrap. 
+  # The input will have a variable width. This event is only binded
+  # if is multiple.
   selectionWrapClick: (e) ->
-    if @settings.multiple
-      @focusSearchInput()
-      e.preventDefault()
-      e.stopPropagation()
+    @focusSearchInput()
+    e.preventDefault()
+    e.stopPropagation()
 
+  # This method ensures that the active item is visible.
+  # If the active item's Y offset is taller than the viewport,
+  # it scrolls to the right point using scrollTop()
+  scrollResultsToItem: ->
+    gutter = if @settings.multiple then 1 else 0
+    next = @wrap.find(".selectr-active")
+    resultList = @wrap.find(".selectr-results")
+    currentScrollTop = resultList.scrollTop() + resultList.outerHeight()
+
+    # Not sure if I should use .position().top) + next.outerHeight(),
+    # or the method below...
+    selectedHeight = (next.index() + gutter) * next.outerHeight()
+
+    offset = selectedHeight - currentScrollTop
+    if selectedHeight > currentScrollTop
+      resultList.scrollTop(resultList.scrollTop() + offset)
+
+  # Ensure the multi-select search input acts as if it's an
+  # inline selection. Dynamically generates a new width using
+  # a dummy block element outside of the viewport.
   scaleSearchField: ->
     if @settings.multiple
       searchField = @wrap.find(".selectr-search")
-#      searchField.attr "placeholder", ""
       defaultStyles = "position:absolute;left:-1000px;top:-1000px;display:none;"
       styles = ["font-size", "font-style", "font-weight", "font-family",
                 "line-height", "text-transform", "letter-spacing"]
@@ -315,28 +330,20 @@ class Selectr
         newWidth = wrapWidth - 10
       searchField.width(newWidth)
 
+  # Helper method to trigger a focus event on the search input.
   focusSearchInput: ->
     searchInput = @wrap.find(".selectr-search")
     if not searchInput.is(":focus")
       @wrap.find(".selectr-search").trigger("focus.selectr")
 
+  # Sets focus/active on the first non-selected, non-disabled item.
   focusFirstItem: ->
     if @wrap.find(".selectr-active").length is 0
       @wrap.find(".selectr-item")
       .not(".selectr-selected, .selectr-disabled")
       .first().addClass("selectr-active")
 
-  scrollResultsToItem: ->
-    gutter = if @settings.multiple then 1 else 0
-    next = @wrap.find(".selectr-active")
-    resultList = @wrap.find(".selectr-results")
-    currentScrollTop = resultList.scrollTop() + resultList.height()
-    selectedHeight = (next.index() + gutter) * next.height()
-    offset = selectedHeight - currentScrollTop
-    if selectedHeight > currentScrollTop
-      resultList.scrollTop(resultList.scrollTop() + offset)
-
-  # Data
+  # Creates a global data model from &lt;select&gt; data.
   createDataModel: ->
     @data = @originalData = ({
       label: $(option).attr("label") || "" # is optgroup
@@ -346,6 +353,8 @@ class Selectr
       selected: $(option).is(":selected")
     } for option in @select.find("optgroup, option"))
 
+  # Used in searchDataModel(), this determines if a match is
+  # found in the provided item/option.
   findMatches: (item, query) ->
     if item.text?
       match = item.text.match(new RegExp(query, "ig"))
@@ -359,6 +368,7 @@ class Selectr
           disabled: item.disabled
         }
 
+  # Searches query against the data model and returns matches.
   searchDataModel: (query) ->
     for item in @data when item.text.match new RegExp(query, "ig")
       @findMatches(item, query)
@@ -374,15 +384,13 @@ class Selectr
       @setSelectValue(selectedItem.data("value"))
       @dropDownHide()
 
+  # Multi-select function for adding a new selection
   addSelection: ->
     selectedItem = @wrap.find(".selectr-item.selectr-active")
     return if selectedItem.hasClass("selectr-selected") or
       selectedItem.hasClass("selectr-disabled")
-
     val = selectedItem.data("value")
-
     selectedItem.addClass("selectr-selected")
-
     pill = @createSelection(
       selectedItem.text(),
       val,
@@ -391,34 +399,22 @@ class Selectr
     )
     search = @wrap.find(".selectr-ms-search")
     search.parent("li").before pill
-
     @setSelectValue(val)
-
     @wrap.trigger("focus.selectr")
-#    @focusFirstItem()
 
-
+  # Multi-select function for removing a selection
   removeSelection: (pill) ->
     @unsetSelectValue(pill.data("value"))
     pill.remove()
     @focusSearchInput()
 
-
+  # Helper method for generating the "pill"/selection HTML object.
   createSelection: (text, value, selected, disabled) ->
     return $("<li/>", class: "selectr-pill")
       .data(value: value, selected: selected, disabled: disabled)
       .append("<button>#{text}</button>")
 
-  unsetSelectValue: (val) ->
-    @wrap.find(".selectr-active").removeClass(".selectr-active")
-    @wrap.find(".selectr-selected:contains('#{val}')")
-      .removeClass("selectr-selected")
-      .removeClass("selectr-active")
-    opts = @select.find("option[value='#{val}']").prop("selected", false)
-    if opts.length is 0 # probably not using value attribute
-      @select.find(":contains('#{val}')").prop("selected", false)
-    item.selected = false for item in @data when item.value is val
-
+  # Sets the value of the original &lt;select&gt;
   setSelectValue: (val) ->
     match = false
     # update select
@@ -431,16 +427,25 @@ class Selectr
     #    $(@data).each (i, item) -> item.selected = true if item.value is val
     return this
 
-  getSelectValue: ->
-    @select.val()
-    return this
+  # Unsets the value of the original &lt;select&gt;. Typically used for multiple.
+  unsetSelectValue: (val) ->
+    @wrap.find(".selectr-active").removeClass(".selectr-active")
+    @wrap.find(".selectr-selected:contains('#{val}')")
+      .removeClass("selectr-selected")
+      .removeClass("selectr-active")
+    opts = @select.find("option[value='#{val}']").prop("selected", false)
+    if opts.length is 0 # probably not using value attribute
+      @select.find(":contains('#{val}')").prop("selected", false)
+    item.selected = false for item in @data when item.value is val
 
+  # Show no results in result list.
   showNoResults: (query) ->
     @wrap.find(".selectr-results")
       .replaceWith("""<ul class="selectr-results no-results">
           <li class="selectr-item">No results found for <b>#{query}</b></li>
         </ul>""")
 
+  # Helper method for generating a row in the result list
   createListItem: (row) ->
     unless row.label is "" # is optgroup label
       li = $("<li />", class: "selectr-label").text(row.label)
@@ -462,19 +467,16 @@ class Selectr
         li.addClass(className) if className isnt ""
     return li
 
+  # Creates a &lt;ul&gt; for the result list.
   createListFromData: (data) ->
     list = $("<ul />", class: "selectr-results")
     lis = (@createListItem(row) for row in data)
     list.append lis
     return list
 
-  setDefaultText: (text) ->
-    if @settings.multiple
-      @wrap.find(".selectr-ms-search").attr "placeholder", text
-    else
-      @wrap.find(".selectr-toggle span").text text
 
-  # js setting > data attr > placeholder attr > "empty" option
+  # Determines what value should be used for the placeholder.
+  # Hierarchy: js setting > data attr > placeholder attr > "empty" option
   getDefaultText: ->
     if @settings.placeholder isnt ""
       @settings.placeholder
@@ -487,6 +489,8 @@ class Selectr
     else
       "Select an option..."
 
+  # Sets old select's tabindex to -1 and the wrapper's
+  # tabindex to whatever the select's tabindex value was.
   setTabIndex: ->
     @select.attr("tabindex", -1)
     tabindex = @settings.tabindex
@@ -495,15 +499,14 @@ class Selectr
     else
       @wrap[0].tabIndex = tabindex
 
+  # Creates the DOM wrapper for Selectr.
   createSelectrWrap: ->
     wrapStyles = "width: #{@settings.wrapWidth}px;"
     wrapStyles += "max-height: #{parseInt(@settings.wrapHeight, 10)}px;"
     @wrap = $ "<div />",
       class: "selectr-wrap",
       style: wrapStyles
-    toggleBtn = $ "<a />",
-      class: "selectr-toggle"
-      title: "#{@settings.placeholder}"
+    toggleBtn = $ "<a />", class: "selectr-toggle", title: "#{@settings.placeholder}"
     toggleBtn.append("<span></span><div><i></i></div>")
     searchInput = $("<input />",
       class: "selectr-search", type: "text", autocomplete: "off")
@@ -548,28 +551,28 @@ class Selectr
 
     @select.hide().after(@wrap).attr("tabindex", "-1")
 
-    @setDefaultText(@settings.placeholder)
+    # Set default text
+    if @settings.multiple
+      @wrap.find(".selectr-ms-search").attr "placeholder", @settings.placeholder
+    else
+      @wrap.find(".selectr-toggle span").text @settings.placeholder
+
     @setTabIndex()
     return @wrap
 
+  # Helper for determining if stroke/key is valid.
+  # Valid meaning, "okay to search with".
   isValidKeyCode: (code) ->
-    # alpha a-Z = 65-90
-    validAlpha = (code >= 65 and code <= 90)
-    # numbers (0-9) = 48-57
-    validNumber = (code >= 48 and code <= 57)
-    # punc = 186-192, 219-222 (except back slash, which breaks regex)
+    validAlpha = (code >= 65 and code <= 90) # alpha a-Z = 65-90
+    validNumber = (code >= 48 and code <= 57) # numbers (0-9) = 48-57
     validPunc = (code >= 185 and code <= 192) or
-      (code >= 219 and code <= 222) and code isnt 220
-    # math = 106-111
-    validMath = (code >= 106 and code <= 111)
-    # space = 32
-    isSpace = (code == 32)
-    # is not up or down arrow keys
-    isntUpOrDown = (code isnt 38 and code isnt 40)
-    # not enter
-    isntEnter = (code isnt 13)
-    # backspace/delete = 8, 46
-    backspaceOrDelete = (code is 8 or code is 46)
-    return isntUpOrDown and isntEnter and
+      (code >= 219 and code <= 222) # punc = 186-192, 219-222
+    validMath = (code >= 106 and code <= 111) # math = 106-111
+    isSpace = (code == 32) # space = 32
+    isntUpOrDown = (code isnt 38 and code isnt 40) # is not up or down arrow keys
+    isntBackslash = (code isnt 220) # not backslash
+    isntEnter = (code isnt 13) # not enter
+    backspaceOrDelete = (code is 8 or code is 46) # backspace/delete = 8, 46
+    return isntUpOrDown and isntEnter and isntBackslash and
       (validAlpha or validNumber or validPunc or
       validMath or isSpace or backspaceOrDelete)

@@ -24,10 +24,10 @@ describe "Selectr", ->
 
     it "should contain default options", ->
       expect(@settings).toBeDefined()
-    it "should have a default width of 250", ->
-      expect(@settings.width).toBe(250)
-    it "should have a default height of 200", ->
-      expect(@settings.height).toBe(200)
+    it "should have a default wrap width of 250", ->
+      expect(@settings.wrapWidth).toBe(250)
+    it "should have a default wrap height of 200", ->
+      expect(@settings.wrapHeight).toBe(200)
 
   describe "data model", ->
     beforeEach ->
@@ -37,27 +37,34 @@ describe "Selectr", ->
       expect(@select.data("selectr").data.length).toBe(@select.find("option").length)
 
   describe "UI setup", ->
-    drop = null
-    wrap = null
+    drop = null; wrap = null;
     beforeEach ->
       @originalTabIndex = @select.attr('tabindex')
       @select.selectr()
       wrap = @select.next(".selectr-wrap")
       drop = @select.next(".selectr-wrap").find(".selectr-drop")
+    afterEach ->
+      wrap = null; drop = null;
 
     it "should hide the original input", ->
       expect(@select).toBeHidden()
+
     it "should create a wrapper as a sibling to original input", ->
       expect(@select.next(".selectr-wrap")).toExist()
+
     it "should use default width option for width if it is not provided", ->
-      expect(@select.next(".selectr-wrap").width()).toBe(@select.data('selectr').settings.width)
+      expect(@select.next(".selectr-wrap").width()).toBe(@select.data('selectr').settings.wrapWidth)
+
     it "should use the provided width option for width if it is provided", ->
       userWidth = 400
-      @select.selectr width: userWidth
+      @select.selectr wrapWidth: userWidth
       expect(@select.next(".selectr-wrap").width()).toBe(userWidth)
+
     it "should apply -1 to select's tabindex and update wrap with select's tabindex", ->
       expect(@select.attr("tabindex")).toBe("-1")
-      expect(@select.next(".selectr-wrap").find(".selectr-toggle").attr("tabindex")).toBe(@originalTabIndex)
+      expect(@select.next(".selectr-wrap").attr("tabindex"))
+        .toBe(@select.data('selectr').settings.tabindex)
+
     it "should have a dropdown", ->
       expect(drop).toExist()
 

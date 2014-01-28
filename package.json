@@ -1,5 +1,7 @@
 {
   "name": "jquery-plugin",
+  "description": "Enhanced <select> menus.",
+  "repository": "http://github.com/jchild3rs/selectr.git",
   "version": "0.0.0-ignored",
   "engines": {
     "node": ">= 0.8.0"
@@ -27,6 +29,7 @@
     "karma-phantomjs-launcher": "~0.1.1",
     "karma": "~0.10.9",
     "grunt-karma": "~0.6.2",
-    "grunt-contrib-coffee": "~0.8.2"
+    "grunt-contrib-coffee": "~0.8.2",
+    "grunt-docco": "~0.3.2"
   }
 }

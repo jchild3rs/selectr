@@ -261,19 +261,6 @@
       }
     };
 
-    Selectr.prototype.scrollResultsToItem = function() {
-      var currentScrollTop, gutter, next, offset, resultList, selectedHeight;
-      gutter = this.settings.multiple ? 1 : 0;
-      next = this.wrap.find(".selectr-active");
-      resultList = this.wrap.find(".selectr-results");
-      currentScrollTop = resultList.scrollTop() + resultList.outerHeight();
-      selectedHeight = (next.index() + gutter) * next.outerHeight();
-      offset = selectedHeight - currentScrollTop;
-      if (selectedHeight > currentScrollTop) {
-        return resultList.scrollTop(resultList.scrollTop() + offset);
-      }
-    };
-
     Selectr.prototype.searchInputKeyUp = function(e) {
       var newResultsList, query, resultContainer, resultData, stroke;
       stroke = e.which || e.keyCode;
@@ -303,10 +290,21 @@
     };
 
     Selectr.prototype.selectionWrapClick = function(e) {
-      if (this.settings.multiple) {
-        this.focusSearchInput();
-        e.preventDefault();
-        return e.stopPropagation();
+      this.focusSearchInput();
+      e.preventDefault();
+      return e.stopPropagation();
+    };
+
+    Selectr.prototype.scrollResultsToItem = function() {
+      var currentScrollTop, gutter, next, offset, resultList, selectedHeight;
+      gutter = this.settings.multiple ? 1 : 0;
+      next = this.wrap.find(".selectr-active");
+      resultList = this.wrap.find(".selectr-results");
+      currentScrollTop = resultList.scrollTop() + resultList.outerHeight();
+      selectedHeight = (next.index() + gutter) * next.outerHeight();
+      offset = selectedHeight - currentScrollTop;
+      if (selectedHeight > currentScrollTop) {
+        return resultList.scrollTop(resultList.scrollTop() + offset);
       }
     };
 
@@ -351,19 +349,6 @@
     Selectr.prototype.focusFirstItem = function() {
       if (this.wrap.find(".selectr-active").length === 0) {
         return this.wrap.find(".selectr-item").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
-      }
-    };
-
-    Selectr.prototype.scrollResultsToItem = function() {
-      var currentScrollTop, gutter, next, offset, resultList, selectedHeight;
-      gutter = this.settings.multiple ? 1 : 0;
-      next = this.wrap.find(".selectr-active");
-      resultList = this.wrap.find(".selectr-results");
-      currentScrollTop = resultList.scrollTop() + resultList.height();
-      selectedHeight = (next.index() + gutter) * next.height();
-      offset = selectedHeight - currentScrollTop;
-      if (selectedHeight > currentScrollTop) {
-        return resultList.scrollTop(resultList.scrollTop() + offset);
       }
     };
 
@@ -460,25 +445,6 @@
       }).append("<button>" + text + "</button>");
     };
 
-    Selectr.prototype.unsetSelectValue = function(val) {
-      var item, opts, _i, _len, _ref, _results;
-      this.wrap.find(".selectr-active").removeClass(".selectr-active");
-      this.wrap.find(".selectr-selected:contains('" + val + "')").removeClass("selectr-selected").removeClass("selectr-active");
-      opts = this.select.find("option[value='" + val + "']").prop("selected", false);
-      if (opts.length === 0) {
-        this.select.find(":contains('" + val + "')").prop("selected", false);
-      }
-      _ref = this.data;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        item = _ref[_i];
-        if (item.value === val) {
-          _results.push(item.selected = false);
-        }
-      }
-      return _results;
-    };
-
     Selectr.prototype.setSelectValue = function(val) {
       var item, match, _i, _len, _ref;
       match = false;
@@ -498,9 +464,23 @@
       return this;
     };
 
-    Selectr.prototype.getSelectValue = function() {
-      this.select.val();
-      return this;
+    Selectr.prototype.unsetSelectValue = function(val) {
+      var item, opts, _i, _len, _ref, _results;
+      this.wrap.find(".selectr-active").removeClass(".selectr-active");
+      this.wrap.find(".selectr-selected:contains('" + val + "')").removeClass("selectr-selected").removeClass("selectr-active");
+      opts = this.select.find("option[value='" + val + "']").prop("selected", false);
+      if (opts.length === 0) {
+        this.select.find(":contains('" + val + "')").prop("selected", false);
+      }
+      _ref = this.data;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        if (item.value === val) {
+          _results.push(item.selected = false);
+        }
+      }
+      return _results;
     };
 
     Selectr.prototype.showNoResults = function(query) {
@@ -550,14 +530,6 @@
       }).call(this);
       list.append(lis);
       return list;
-    };
-
-    Selectr.prototype.setDefaultText = function(text) {
-      if (this.settings.multiple) {
-        return this.wrap.find(".selectr-ms-search").attr("placeholder", text);
-      } else {
-        return this.wrap.find(".selectr-toggle span").text(text);
-      }
     };
 
     Selectr.prototype.getDefaultText = function() {
@@ -645,22 +617,27 @@
         this.wrap.append(toggleBtn, dropdownWrap);
       }
       this.select.hide().after(this.wrap).attr("tabindex", "-1");
-      this.setDefaultText(this.settings.placeholder);
+      if (this.settings.multiple) {
+        this.wrap.find(".selectr-ms-search").attr("placeholder", this.settings.placeholder);
+      } else {
+        this.wrap.find(".selectr-toggle span").text(this.settings.placeholder);
+      }
       this.setTabIndex();
       return this.wrap;
     };
 
     Selectr.prototype.isValidKeyCode = function(code) {
-      var backspaceOrDelete, isSpace, isntEnter, isntUpOrDown, validAlpha, validMath, validNumber, validPunc;
+      var backspaceOrDelete, isSpace, isntBackslash, isntEnter, isntUpOrDown, validAlpha, validMath, validNumber, validPunc;
       validAlpha = code >= 65 && code <= 90;
       validNumber = code >= 48 && code <= 57;
-      validPunc = (code >= 185 && code <= 192) || (code >= 219 && code <= 222) && code !== 220;
+      validPunc = (code >= 185 && code <= 192) || (code >= 219 && code <= 222);
       validMath = code >= 106 && code <= 111;
       isSpace = code === 32;
       isntUpOrDown = code !== 38 && code !== 40;
+      isntBackslash = code !== 220;
       isntEnter = code !== 13;
       backspaceOrDelete = code === 8 || code === 46;
-      return isntUpOrDown && isntEnter && (validAlpha || validNumber || validPunc || validMath || isSpace || backspaceOrDelete);
+      return isntUpOrDown && isntEnter && isntBackslash && (validAlpha || validNumber || validPunc || validMath || isSpace || backspaceOrDelete);
     };
 
     return Selectr;

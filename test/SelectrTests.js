@@ -27,11 +27,11 @@ describe("Selectr", function() {
     it("should contain default options", function() {
       return expect(this.settings).toBeDefined();
     });
-    it("should have a default width of 250", function() {
-      return expect(this.settings.width).toBe(250);
+    it("should have a default wrap width of 250", function() {
+      return expect(this.settings.wrapWidth).toBe(250);
     });
-    return it("should have a default height of 200", function() {
-      return expect(this.settings.height).toBe(200);
+    return it("should have a default wrap height of 200", function() {
+      return expect(this.settings.wrapHeight).toBe(200);
     });
   });
   describe("data model", function() {
@@ -53,6 +53,10 @@ describe("Selectr", function() {
       wrap = this.select.next(".selectr-wrap");
       return drop = this.select.next(".selectr-wrap").find(".selectr-drop");
     });
+    afterEach(function() {
+      wrap = null;
+      return drop = null;
+    });
     it("should hide the original input", function() {
       return expect(this.select).toBeHidden();
     });
@@ -60,19 +64,19 @@ describe("Selectr", function() {
       return expect(this.select.next(".selectr-wrap")).toExist();
     });
     it("should use default width option for width if it is not provided", function() {
-      return expect(this.select.next(".selectr-wrap").width()).toBe(this.select.data('selectr').settings.width);
+      return expect(this.select.next(".selectr-wrap").width()).toBe(this.select.data('selectr').settings.wrapWidth);
     });
     it("should use the provided width option for width if it is provided", function() {
       var userWidth;
       userWidth = 400;
       this.select.selectr({
-        width: userWidth
+        wrapWidth: userWidth
       });
       return expect(this.select.next(".selectr-wrap").width()).toBe(userWidth);
     });
     it("should apply -1 to select's tabindex and update wrap with select's tabindex", function() {
       expect(this.select.attr("tabindex")).toBe("-1");
-      return expect(this.select.next(".selectr-wrap").find(".selectr-toggle").attr("tabindex")).toBe(this.originalTabIndex);
+      return expect(this.select.next(".selectr-wrap").attr("tabindex")).toBe(this.select.data('selectr').settings.tabindex);
     });
     it("should have a dropdown", function() {
       return expect(drop).toExist();
