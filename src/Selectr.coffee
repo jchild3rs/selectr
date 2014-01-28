@@ -3,20 +3,18 @@
 # for chainability. Creates and applies a new instance
 # of Selectr as a data attribute accessible via:
 # `$("#your-select").data("selectr")`
-
 $.fn.extend
   selectr: (options) ->
     return this.each ->
       $(this).data "selectr", new Selectr $(this), options
 
 # ## Selectr Class definition
-# As you can see in the constructor below, gets passed the
-# select element, and the user provided settings via the
-# jQuery exposure above.
 class Selectr
 
-  constructor: (@select, @providedSettings) ->
-    @constructSettings()
+  # Constructor gets passed the original select element, and the
+  # user provided settings via the jQuery exposure above.
+  constructor: (@select, providedSettings) ->
+    @constructSettings(providedSettings)
     @createDataModel()
     @createSelectrWrap()
     @bindEvents()
@@ -33,14 +31,16 @@ class Selectr
   # Merge the default options with the options provided by the user
   # and set the multiple, tabindex, and placeholder values. It exposes
   # everything to `@settings`, which is accessibile in all local methods.
-  constructSettings: ->
-    @settings = $.extend({}, @defaultSettings, @providedSettings)
+  constructSettings: (providedSettings) ->
+    @settings = $.extend({}, @defaultSettings, providedSettings)
     @settings.multiple = true if @select.attr "multiple"
     @settings.tabindex = @select.attr "tabindex"
     @settings.placeholder = @getDefaultText()
 
-  # <b>Dropdowns</b><br/>
-  # Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod.
+
+  # ### Dropdowns
+  # Hides all visible dropdowns, then shows the current. Also binds
+  # a temporary click event to `document` for closing the drop down.
   dropDownShow: ->
     @dropDownHide()
     @wrap.addClass("selectr-open")
@@ -50,47 +50,70 @@ class Selectr
     @scaleSearchField() if @settings.multiple
     $(document).on("click.selectr", (e) => @handleDocumentClick(e))
 
+  # Hides all visible dropdowns.
   dropDownHide: ->
-    # Always hide all instances for now.
     if $(".selectr-open").length > 0
       $(".selectr-open")
         .removeClass("selectr-open")
         .find(".selectr-drop").hide()
 
+  # Resets the result list using @originalData
   dropDownReset: ->
     newResultsList = @createListFromData(@originalData)
     @wrap.find(".selectr-results").replaceWith(newResultsList)
     @wrap.trigger("focus.selectr")
 
-  # Event binding
+  # ### Event binding
+  # All bindings are DOM scoped to the wrapper and all
+  # event names are namespaced using ".selectr".
+  #
+  # Using => and passing the event object through to the
+  # handler to avoid CoffeeScript creating a bind method
+  # and cluttering the constructor.
   bindEvents: ->
+
+    # Wrapper bindings
     @wrap.on
       "click.selectr": (e) => @wrapClick(e)
       "keydown.selectr": (e) => @wrapKeyDown(e)
+
+    # Dropdown bindings
     @wrap.find(".selectr-drop")
       .on("click.selectr", ".selectr-item", (e) => @resultItemClick(e))
+
+    # Search input bindings
     @wrap.find(".selectr-search").on
       "focus.selectr": (e) => @searchInputFocus(e)
       "click.selectr": (e) => @searchInputClick(e)
       "keyup.selectr": (e) => @searchInputKeyUp(e)
       "keydown.selectr": (e) => @searchInputKeyDown(e)
-    @wrap.find(".selectr-selections")
-      .on("click.selectr", (e) => @selectionWrapClick(e))
-      .on("click.selectr", ".selectr-pill", (e) => @selectionItemClick(e))
 
+    # Multi-select wrapper bindings
+    if @settings.multiple
+      @wrap.find(".selectr-selections")
+        .on("click.selectr", (e) => @selectionWrapClick(e))
+        .on("click.selectr", ".selectr-pill", (e) => @selectionItemClick(e))
+
+  # __[Multi Select]__ Click handler for a "selection" or "pill".
+  # For now, it just removes the selection.
+  #
+  # __TODO: add X or a close button and it's logic to selections__
   selectionItemClick: (e) ->
+    @removeSelection($(e.currentTarget))
     e.preventDefault()
     e.stopPropagation()
-    @removeSelection($(e.currentTarget))
 
+  # Click handler that gets added to the document when a
+  # dropdown is visible. This handler unbinds itself when
+  # the document is clicked.
   handleDocumentClick: (e) ->
-    if e.currentTarget is document and
-    @wrap.find(".selectr-drop").is ":visible"
+    if e.currentTarget is document
       @dropDownHide()
       $(document).off("click.selectr")
     e.preventDefault()
     e.stopPropagation()
 
+  # Click handler for items in the result list.
   resultItemClick: (e) ->
     @wrap.find(".selectr-active").removeClass("selectr-active")
     $(e.currentTarget).addClass("selectr-active")
@@ -98,7 +121,7 @@ class Selectr
     e.stopPropagation()
     e.preventDefault()
 
-  # Wrap events
+  # Click handler for top-level wrapper.
   wrapClick: (e) ->
     unless @wrap.find(".selectr-drop").is ":visible"
       @dropDownShow()
@@ -108,6 +131,8 @@ class Selectr
     e.stopPropagation()
     e.preventDefault()
 
+  # Keydown handler for wrapper. Used mainly for
+  # emulating native browser events.
   wrapKeyDown: (e) ->
     stroke = e.which or e.keyCode
     unless @wrap.find(".selectr-drop").is ":visible"
@@ -117,94 +142,103 @@ class Selectr
         e.preventDefault()
         e.stopPropagation()
 
-  # Seach button
+  # Focus handler for the search input.
   searchInputFocus: (e) ->
     @dropDownShow() if @settings.multiple
     e.preventDefault()
     e.stopPropagation()
 
+  # Click handler for the search input.
   searchInputClick: (e) ->
     e.preventDefault()
     e.stopPropagation()
 
+  # Keydown handler for the search input. Keydown has
+  # been designated for behavior logic. (keyup for search)
   searchInputKeyDown: (e) ->
-    stroke = e.which or e.keyCode
-    query = e.currentTarget.value
-    selected = @wrap.find(".selectr-active")
-    hasSelection = selected.length isnt 0
-    drop = @wrap.find(".selectr-drop")
-    resultList = @wrap.find(".selectr-results")
-
     @scaleSearchField()
-
-    switch stroke
-
+    switch e.which or e.keyCode
       when 9 # tab
-        if drop.is(":visible")
-          @dropDownHide()
-          @wrap.focus()
-
+        @searchInputTabPress(); break
       when 27 # esc
-        @dropDownHide()
-        @wrap.focus()
-
+        @searchInputUpEscPress(e); break
       when 38 # up
-        if hasSelection and selected.index() isnt 0
-          prev = selected.prevAll(".selectr-item:visible")
-            .not(".selectr-selected, .selectr-disabled").first()
-          unless prev.length is 0
-            selected.removeClass("selectr-active")
-            prev.addClass("selectr-active")
-            currentScrollTop = resultList.scrollTop() + resultList.height()
-            selectedHeight = ((prev.index()) * selected.height())
-            offset = currentScrollTop -
-              (resultList.height() - selected.height())
-            if offset > selectedHeight
-              resultList.scrollTop((resultList.scrollTop() +
-                (selectedHeight) - offset))
-        e.preventDefault()
-        break
-
+        @searchInputUpArrowPress(e); break
       when 40 # down
-        if @settings.multiple
-          @dropDownShow()
-
-        if not hasSelection
-          @wrap.find(".selectr-item:visible")
-            .not(".selectr-selected, .selectr-disabled")
-            .first().addClass("selectr-active")
-        else
-          next = selected.nextAll(".selectr-item:visible")
-            .not(".selectr-selected, .selectr-disabled").first()
-          unless next.length is 0
-            selected.removeClass("selectr-active")
-            next.addClass("selectr-active")
-            @scrollResultsToItem()
-
-        e.preventDefault()
-        break
-
+        @searchInputDownArrowPress(e); break
       when 13 # enter
-        if hasSelection
-          @makeSelection()
-          @wrap.find(".selectr-search").val("")
-          @dropDownReset()
-          @focusFirstItem()
-          @scrollResultsToItem()
-        e.preventDefault()
-        break
-
+        @searchInputEnterPress(e); break
       when 8 # delete
-        if (@settings.multiple and query.length is 0) and
-        (@wrap.find(".selectr-pill").length > 0)
-          @removeSelection(@wrap.find(".selectr-pill").last())
-          e.preventDefault()
-          break
-
+        @searchInputUpDeletePress(e); break
       else
         break
 
-    return this
+  searchInputTabPress: ->
+    @dropDownHide()
+    @wrap.focus()
+
+  searchInputEnterPress: (e) ->
+    selected = @wrap.find(".selectr-active")
+    hasSelection = selected.length isnt 0
+    if hasSelection
+      @makeSelection()
+      @wrap.find(".selectr-search").val("")
+      @dropDownReset()
+      @focusFirstItem()
+      @scrollResultsToItem()
+    e.preventDefault()
+
+  searchInputDownArrowPress: (e) ->
+    selected = @wrap.find(".selectr-active")
+    hasSelection = selected.length isnt 0
+    if @settings.multiple
+      @dropDownShow()
+
+    if not hasSelection
+      @wrap.find(".selectr-item:visible")
+      .not(".selectr-selected, .selectr-disabled")
+      .first().addClass("selectr-active")
+    else
+      next = selected.nextAll(".selectr-item:visible")
+      .not(".selectr-selected, .selectr-disabled").first()
+      unless next.length is 0
+        selected.removeClass("selectr-active")
+        next.addClass("selectr-active")
+        @scrollResultsToItem()
+
+    e.preventDefault()
+
+  searchInputUpArrowPress: (e) ->
+    selected = @wrap.find(".selectr-active")
+    hasSelection = selected.length isnt 0
+    resultList = @wrap.find(".selectr-results")
+    if hasSelection and selected.index() isnt 0
+      prev = selected.prevAll(".selectr-item:visible")
+      .not(".selectr-selected, .selectr-disabled").first()
+      unless prev.length is 0
+        selected.removeClass("selectr-active")
+        prev.addClass("selectr-active")
+        currentScrollTop = resultList.scrollTop() + resultList.height()
+        selectedHeight = ((prev.index()) * selected.height())
+        offset = currentScrollTop -
+        (resultList.height() - selected.height())
+        if offset > selectedHeight
+          resultList.scrollTop((resultList.scrollTop() +
+          (selectedHeight) - offset))
+    e.preventDefault()
+
+  searchInputUpEscPress: (e) ->
+    @dropDownHide()
+    @wrap.focus()
+    e.preventDefault()
+
+  searchInputUpDeletePress: (e) ->
+    query = e.currentTarget.value
+    if (@settings.multiple and query.length is 0) and
+    (@wrap.find(".selectr-pill").length > 0)
+      @removeSelection(@wrap.find(".selectr-pill").last())
+      e.preventDefault()
+
 
   scrollResultsToItem: ->
     gutter = if @settings.multiple then 1 else 0
@@ -212,6 +246,7 @@ class Selectr
     resultList = @wrap.find(".selectr-results")
     currentScrollTop = resultList.scrollTop() + resultList.outerHeight()
     selectedHeight = (next.index() + gutter) * next.outerHeight()
+#!    selectedHeight = (next.position().top) + next.outerHeight()
     offset = selectedHeight - currentScrollTop
     if selectedHeight > currentScrollTop
       resultList.scrollTop(resultList.scrollTop() + offset)
@@ -245,9 +280,9 @@ class Selectr
       # show results if not aleady visible
       @dropDownShow() if not @wrap.find(".selectr-drop").is(":visible")
 
-  ###
-  If multiple, we want to focus the input when the user
-  clicks on the wrap. The input will have a variable width. ###
+
+  # If multiple, we want to focus the input when the user
+  # clicks on the wrap. The input will have a variable width.
   selectionWrapClick: (e) ->
     if @settings.multiple
       @focusSearchInput()
@@ -303,7 +338,7 @@ class Selectr
 
   # Data
   createDataModel: ->
-    @originalData = @data = ({
+    @data = @originalData = ({
       label: $(option).attr("label") || "" # is optgroup
       text: $(option).text()
       value: $(option).val()

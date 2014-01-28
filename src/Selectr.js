@@ -12,8 +12,7 @@
   Selectr = (function() {
     function Selectr(select, providedSettings) {
       this.select = select;
-      this.providedSettings = providedSettings;
-      this.constructSettings();
+      this.constructSettings(providedSettings);
       this.createDataModel();
       this.createSelectrWrap();
       this.bindEvents();
@@ -28,8 +27,8 @@
       placeholder: ""
     };
 
-    Selectr.prototype.constructSettings = function() {
-      this.settings = $.extend({}, this.defaultSettings, this.providedSettings);
+    Selectr.prototype.constructSettings = function(providedSettings) {
+      this.settings = $.extend({}, this.defaultSettings, providedSettings);
       if (this.select.attr("multiple")) {
         this.settings.multiple = true;
       }
@@ -92,21 +91,23 @@
           return _this.searchInputKeyDown(e);
         }
       });
-      return this.wrap.find(".selectr-selections").on("click.selectr", function(e) {
-        return _this.selectionWrapClick(e);
-      }).on("click.selectr", ".selectr-pill", function(e) {
-        return _this.selectionItemClick(e);
-      });
+      if (this.settings.multiple) {
+        return this.wrap.find(".selectr-selections").on("click.selectr", function(e) {
+          return _this.selectionWrapClick(e);
+        }).on("click.selectr", ".selectr-pill", function(e) {
+          return _this.selectionItemClick(e);
+        });
+      }
     };
 
     Selectr.prototype.selectionItemClick = function(e) {
+      this.removeSelection($(e.currentTarget));
       e.preventDefault();
-      e.stopPropagation();
-      return this.removeSelection($(e.currentTarget));
+      return e.stopPropagation();
     };
 
     Selectr.prototype.handleDocumentClick = function(e) {
-      if (e.currentTarget === document && this.wrap.find(".selectr-drop").is(":visible")) {
+      if (e.currentTarget === document) {
         this.dropDownHide();
         $(document).off("click.selectr");
       }
@@ -160,78 +161,104 @@
     };
 
     Selectr.prototype.searchInputKeyDown = function(e) {
-      var currentScrollTop, drop, hasSelection, next, offset, prev, query, resultList, selected, selectedHeight, stroke;
-      stroke = e.which || e.keyCode;
-      query = e.currentTarget.value;
-      selected = this.wrap.find(".selectr-active");
-      hasSelection = selected.length !== 0;
-      drop = this.wrap.find(".selectr-drop");
-      resultList = this.wrap.find(".selectr-results");
       this.scaleSearchField();
-      switch (stroke) {
+      switch (e.which || e.keyCode) {
         case 9:
-          if (drop.is(":visible")) {
-            this.dropDownHide();
-            this.wrap.focus();
-          }
+          this.searchInputTabPress();
           break;
         case 27:
-          this.dropDownHide();
-          this.wrap.focus();
+          this.searchInputUpEscPress(e);
           break;
         case 38:
-          if (hasSelection && selected.index() !== 0) {
-            prev = selected.prevAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
-            if (prev.length !== 0) {
-              selected.removeClass("selectr-active");
-              prev.addClass("selectr-active");
-              currentScrollTop = resultList.scrollTop() + resultList.height();
-              selectedHeight = (prev.index()) * selected.height();
-              offset = currentScrollTop - (resultList.height() - selected.height());
-              if (offset > selectedHeight) {
-                resultList.scrollTop(resultList.scrollTop() + selectedHeight - offset);
-              }
-            }
-          }
-          e.preventDefault();
+          this.searchInputUpArrowPress(e);
           break;
         case 40:
-          if (this.settings.multiple) {
-            this.dropDownShow();
-          }
-          if (!hasSelection) {
-            this.wrap.find(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
-          } else {
-            next = selected.nextAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
-            if (next.length !== 0) {
-              selected.removeClass("selectr-active");
-              next.addClass("selectr-active");
-              this.scrollResultsToItem();
-            }
-          }
-          e.preventDefault();
+          this.searchInputDownArrowPress(e);
           break;
         case 13:
-          if (hasSelection) {
-            this.makeSelection();
-            this.wrap.find(".selectr-search").val("");
-            this.dropDownReset();
-            this.focusFirstItem();
-            this.scrollResultsToItem();
-          }
-          e.preventDefault();
+          this.searchInputEnterPress(e);
           break;
         case 8:
-          if ((this.settings.multiple && query.length === 0) && (this.wrap.find(".selectr-pill").length > 0)) {
-            this.removeSelection(this.wrap.find(".selectr-pill").last());
-            e.preventDefault();
-            break;
-          }
+          this.searchInputUpDeletePress(e);
           break;
         default:
           break;
       }
-      return this;
+    };
+
+    Selectr.prototype.searchInputTabPress = function() {
+      this.dropDownHide();
+      return this.wrap.focus();
+    };
+
+    Selectr.prototype.searchInputEnterPress = function(e) {
+      var hasSelection, selected;
+      selected = this.wrap.find(".selectr-active");
+      hasSelection = selected.length !== 0;
+      if (hasSelection) {
+        this.makeSelection();
+        this.wrap.find(".selectr-search").val("");
+        this.dropDownReset();
+        this.focusFirstItem();
+        this.scrollResultsToItem();
+      }
+      return e.preventDefault();
+    };
+
+    Selectr.prototype.searchInputDownArrowPress = function(e) {
+      var hasSelection, next, selected;
+      selected = this.wrap.find(".selectr-active");
+      hasSelection = selected.length !== 0;
+      if (this.settings.multiple) {
+        this.dropDownShow();
+      }
+      if (!hasSelection) {
+        this.wrap.find(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first().addClass("selectr-active");
+      } else {
+        next = selected.nextAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
+        if (next.length !== 0) {
+          selected.removeClass("selectr-active");
+          next.addClass("selectr-active");
+          this.scrollResultsToItem();
+        }
+      }
+      return e.preventDefault();
+    };
+
+    Selectr.prototype.searchInputUpArrowPress = function(e) {
+      var currentScrollTop, hasSelection, offset, prev, resultList, selected, selectedHeight;
+      selected = this.wrap.find(".selectr-active");
+      hasSelection = selected.length !== 0;
+      resultList = this.wrap.find(".selectr-results");
+      if (hasSelection && selected.index() !== 0) {
+        prev = selected.prevAll(".selectr-item:visible").not(".selectr-selected, .selectr-disabled").first();
+        if (prev.length !== 0) {
+          selected.removeClass("selectr-active");
+          prev.addClass("selectr-active");
+          currentScrollTop = resultList.scrollTop() + resultList.height();
+          selectedHeight = (prev.index()) * selected.height();
+          offset = currentScrollTop - (resultList.height() - selected.height());
+          if (offset > selectedHeight) {
+            resultList.scrollTop(resultList.scrollTop() + selectedHeight - offset);
+          }
+        }
+      }
+      return e.preventDefault();
+    };
+
+    Selectr.prototype.searchInputUpEscPress = function(e) {
+      this.dropDownHide();
+      this.wrap.focus();
+      return e.preventDefault();
+    };
+
+    Selectr.prototype.searchInputUpDeletePress = function(e) {
+      var query;
+      query = e.currentTarget.value;
+      if ((this.settings.multiple && query.length === 0) && (this.wrap.find(".selectr-pill").length > 0)) {
+        this.removeSelection(this.wrap.find(".selectr-pill").last());
+        return e.preventDefault();
+      }
     };
 
     Selectr.prototype.scrollResultsToItem = function() {
@@ -274,12 +301,6 @@
         }
       }
     };
-
-    /*
-    If multiple, we want to focus the input when the user
-    clicks on the wrap. The input will have a variable width.
-    */
-
 
     Selectr.prototype.selectionWrapClick = function(e) {
       if (this.settings.multiple) {
@@ -348,7 +369,7 @@
 
     Selectr.prototype.createDataModel = function() {
       var option;
-      return this.originalData = this.data = (function() {
+      return this.data = this.originalData = (function() {
         var _i, _len, _ref, _results;
         _ref = this.select.find("optgroup, option");
         _results = [];

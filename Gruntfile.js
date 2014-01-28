@@ -122,15 +122,16 @@ module.exports = function(grunt) {
     },
     docco: {
       generate: {
-        src: ['src/Selectr.coffee'],
+        src: ["src/Selectr.coffee"],
         options: {
           layout: "linear" // parallel, classic, linear
         }
       },
       debug: {
-        src: ['test/**/*.coffee'],
+        src: ["test/**/*.coffee"],
         options: {
-          output: 'docs/test'
+          output: "docs/test",
+          layout: "linear"
         }
       }
     }
