@@ -1,17 +1,11 @@
 (function() {
-  var Selectr;
-
-  $.fn.extend({
-    selectr: function(options) {
-      return this.each(function() {
-        return $(this).data("selectr", new Selectr($(this), options));
-      });
-    }
-  });
+  var AjaxSelectr, Selectr,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   Selectr = (function() {
-    function Selectr(select, providedSettings) {
-      this.select = select;
+    function Selectr(input, providedSettings) {
+      this.input = input;
       this.constructSettings(providedSettings);
       this.createDataModel();
       this.createSelectrWrap();
@@ -29,10 +23,10 @@
 
     Selectr.prototype.constructSettings = function(providedSettings) {
       this.settings = $.extend({}, this.defaultSettings, providedSettings);
-      if (this.select.attr("multiple")) {
+      if (this.input.attr("multiple")) {
         this.settings.multiple = true;
       }
-      this.settings.tabindex = this.select.attr("tabindex");
+      this.settings.tabindex = this.input.attr("tabindex");
       return this.settings.placeholder = this.getDefaultText();
     };
 
@@ -93,14 +87,14 @@
       });
       if (this.settings.multiple) {
         return this.wrap.find(".selectr-selections").on("click.selectr", function(e) {
-          return _this.selectionWrapClick(e);
+          return _this.wrapClick(e);
         }).on("click.selectr", ".selectr-pill", function(e) {
-          return _this.selectionItemClick(e);
+          return _this.itemClick(e);
         });
       }
     };
 
-    Selectr.prototype.selectionItemClick = function(e) {
+    Selectr.prototype.itemClick = function(e) {
       this.removeSelection($(e.currentTarget));
       e.preventDefault();
       return e.stopPropagation();
@@ -289,7 +283,7 @@
       }
     };
 
-    Selectr.prototype.selectionWrapClick = function(e) {
+    Selectr.prototype.wrapClick = function(e) {
       this.focusSearchInput();
       e.preventDefault();
       return e.stopPropagation();
@@ -356,7 +350,7 @@
       var option;
       return this.data = this.originalData = (function() {
         var _i, _len, _ref, _results;
-        _ref = this.select.find("optgroup, option");
+        _ref = this.input.find("optgroup, option");
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           option = _ref[_i];
@@ -448,7 +442,7 @@
     Selectr.prototype.setSelectValue = function(val) {
       var item, match, _i, _len, _ref;
       match = false;
-      this.select.find("option").each(function(i, option) {
+      this.input.find("option").each(function(i, option) {
         if ($(option).val() === val && !match) {
           $(option).prop("selected", true);
           return match = true;
@@ -468,9 +462,9 @@
       var item, opts, _i, _len, _ref, _results;
       this.wrap.find(".selectr-active").removeClass(".selectr-active");
       this.wrap.find(".selectr-selected:contains('" + val + "')").removeClass("selectr-selected").removeClass("selectr-active");
-      opts = this.select.find("option[value='" + val + "']").prop("selected", false);
+      opts = this.input.find("option[value='" + val + "']").prop("selected", false);
       if (opts.length === 0) {
-        this.select.find(":contains('" + val + "')").prop("selected", false);
+        this.input.find(":contains('" + val + "')").prop("selected", false);
       }
       _ref = this.data;
       _results = [];
@@ -535,12 +529,12 @@
     Selectr.prototype.getDefaultText = function() {
       if (this.settings.placeholder !== "") {
         return this.settings.placeholder;
-      } else if (this.select.data("placeholder")) {
-        return this.select.data("placeholder");
-      } else if (this.select.attr("placeholder")) {
-        return this.select.attr("placeholder");
-      } else if (this.select.find("option:empty").text()) {
-        return this.select.find("option:empty").text();
+      } else if (this.input.data("placeholder")) {
+        return this.input.data("placeholder");
+      } else if (this.input.attr("placeholder")) {
+        return this.input.attr("placeholder");
+      } else if (this.input.find("option:empty").text()) {
+        return this.input.find("option:empty").text();
       } else {
         return "Select an option...";
       }
@@ -548,7 +542,7 @@
 
     Selectr.prototype.setTabIndex = function() {
       var tabindex;
-      this.select.attr("tabindex", -1);
+      this.input.attr("tabindex", -1);
       tabindex = this.settings.tabindex;
       if (this.settings.multiple) {
         return this.wrap.find(".selectr-ms-search").attr("tabindex", tabindex);
@@ -588,35 +582,39 @@
         type: "text",
         "class": "selectr-ms-search selectr-search",
         autocomplete: "off",
-        tabindex: this.select.attr("tabindex"),
+        tabindex: this.input.attr("tabindex"),
         width: this.settings.wrapWidth - 20
       });
-      resultsList = this.createListFromData(this.data);
-      if (this.settings.multiple) {
-        searchWrap.append(msSearchInput);
-        selectionList.append(searchWrap);
-        multiSelectWrap.append(selectionList);
-        dropdownWrap.append(resultsList);
-        this.wrap.append(multiSelectWrap, dropdownWrap).addClass("selectr-multiple");
-        if (this.select.val() !== "" && this.select.val().length !== 0) {
-          hasPreselections = false;
-          this.select.find("option:selected").each(function(i, option) {
-            var pill;
-            if ($(option).val() !== "") {
-              hasPreselections = true;
-              pill = _this.createSelection($(option).text(), $(option).val(), $(option).is(":selected"), $(option).is(":disabled"));
-              return selectionList.prepend(pill);
-            }
-          });
-          if (hasPreselections) {
-            this.scaleSearchField();
-          }
-        }
+      if (this.settings.external) {
+        this.wrap.append(searchInput, dropdownWrap);
       } else {
-        dropdownWrap.append(searchInput, resultsList);
-        this.wrap.append(toggleBtn, dropdownWrap);
+        resultsList = this.createListFromData(this.data);
+        if (this.settings.multiple) {
+          searchWrap.append(msSearchInput);
+          selectionList.append(searchWrap);
+          multiSelectWrap.append(selectionList);
+          dropdownWrap.append(resultsList);
+          this.wrap.append(multiSelectWrap, dropdownWrap).addClass("selectr-multiple");
+          if (this.input.val() !== "" && this.input.val().length !== 0) {
+            hasPreselections = false;
+            this.input.find("option:selected").each(function(i, option) {
+              var pill;
+              if ($(option).val() !== "") {
+                hasPreselections = true;
+                pill = _this.createSelection($(option).text(), $(option).val(), $(option).is(":selected"), $(option).is(":disabled"));
+                return selectionList.prepend(pill);
+              }
+            });
+            if (hasPreselections) {
+              this.scaleSearchField();
+            }
+          }
+        } else {
+          dropdownWrap.append(searchInput, resultsList);
+          this.wrap.append(toggleBtn, dropdownWrap);
+        }
       }
-      this.select.hide().after(this.wrap).attr("tabindex", "-1");
+      this.input.hide().after(this.wrap).attr("tabindex", "-1");
       if (this.settings.multiple) {
         this.wrap.find(".selectr-ms-search").attr("placeholder", this.settings.placeholder);
       } else {
@@ -643,6 +641,43 @@
     return Selectr;
 
   })();
+
+  AjaxSelectr = (function(_super) {
+    __extends(AjaxSelectr, _super);
+
+    function AjaxSelectr(input, providedSettings) {
+      this.input = input;
+      this.constructSettings(providedSettings);
+      this.settings.external = true;
+      this.createDataModel();
+      this.createSelectrWrap();
+      this.bindEvents();
+    }
+
+    AjaxSelectr.prototype.createDataModel = function(e) {
+      return console.log(e);
+    };
+
+    AjaxSelectr.prototype.searchInputKeyUp = function(e) {
+      console.log(e);
+      return console.log('does this overwrite?');
+    };
+
+    return AjaxSelectr;
+
+  })(Selectr);
+
+  $.fn.extend({
+    selectr: function(options) {
+      return this.each(function() {
+        if ($(this).is("select")) {
+          return $(this).data("selectr", new Selectr($(this), options));
+        } else {
+          return $(this).data("selectr", new AjaxSelectr($(this), options));
+        }
+      });
+    }
+  });
 
 }).call(this);
 
