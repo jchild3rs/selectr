@@ -30,6 +30,7 @@
     "karma": "~0.10.9",
     "grunt-karma": "~0.6.2",
     "grunt-contrib-coffee": "~0.8.2",
-    "grunt-docco": "~0.3.2"
+    "grunt-docco": "~0.3.2",
+    "grunt-coffeelint": "0.0.8"
   }
 }

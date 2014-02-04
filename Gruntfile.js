@@ -51,10 +51,10 @@ module.exports = function(grunt) {
       }
     },
     watch: {
-      src: {
-        files: '<%= jshint.src.src %>',
-        tasks: ['jshint:src']
-      },
+//      src: {
+//        files: '<%= jshint.src.src %>',
+//        tasks: ['jshint:src']
+//      },
       coffeeSrc: {
         files: ['src/**/*.coffee'],
         tasks: ['coffee:devSrc', 'docco:generate']
@@ -134,7 +134,20 @@ module.exports = function(grunt) {
           layout: "linear"
         }
       }
-    }
+    },
+    coffeelint: {
+      app: ['src/*.coffee'],
+      tests: {
+        files: {
+          src: ['test/*.coffee']
+        },
+        options: {
+          'no_trailing_whitespace': {
+            'level': 'error'
+          }
+        }
+      }
+    },
   });
 
   // These plugins provide necessary tasks.
@@ -142,17 +155,18 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-contrib-jshint');
+//  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-compass');
   grunt.loadNpmTasks('grunt-contrib-coffee');
   grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-docco');
+  grunt.loadNpmTasks('grunt-coffeelint');
 
 
 
   // Default task.
-  grunt.registerTask('test', ['jshint', 'karma']);
-  grunt.registerTask('default', ['compass:dev', 'coffee:dev', 'jshint', 'karma', 'clean', 'concat', 'uglify']);
-  grunt.registerTask('dist', ['compass:dist', 'coffee:dist', 'jshint', 'karma', 'clean', 'concat', 'uglify']);
+  grunt.registerTask('test', ['coffeelint:app', 'karma']);
+  grunt.registerTask('default', ['compass:dev', 'coffee:dev', 'karma', 'clean', 'concat', 'uglify']);
+  grunt.registerTask('dist', ['compass:dist', 'coffee:dist', 'karma', 'clean', 'concat', 'uglify']);
 
 };

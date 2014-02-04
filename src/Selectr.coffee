@@ -1,19 +1,9 @@
-# ## Expose to jQuery
-# Loops through each jQuery selection and returns `this`
-# for chainability. Creates and applies a new instance
-# of Selectr as a data attribute accessible via:
-# `$("#your-select").data("selectr")`
-$.fn.extend
-  selectr: (options) ->
-    return this.each ->
-      $(this).data "selectr", new Selectr $(this), options
-
 # ## Selectr Class definition
 class Selectr
 
   # Constructor gets passed the original select element, and the
   # user provided settings via the jQuery exposure above.
-  constructor: (@select, providedSettings) ->
+  constructor: (@input, providedSettings) ->
     @constructSettings(providedSettings)
     @createDataModel()
     @createSelectrWrap()
@@ -33,8 +23,8 @@ class Selectr
   # everything to `@settings`, which is accessibile in all local methods.
   constructSettings: (providedSettings) ->
     @settings = $.extend({}, @defaultSettings, providedSettings)
-    @settings.multiple = true if @select.attr "multiple"
-    @settings.tabindex = @select.attr "tabindex"
+    @settings.multiple = true if @input.attr "multiple"
+    @settings.tabindex = @input.attr "tabindex"
     @settings.placeholder = @getDefaultText()
 
 
@@ -54,13 +44,16 @@ class Selectr
   dropDownHide: ->
     if $(".selectr-open").length > 0
       $(".selectr-open")
-        .removeClass("selectr-open")
-        .find(".selectr-drop").hide()
+      .removeClass("selectr-open")
+      .find(".selectr-drop").hide()
 
   # Resets the result list using @originalData
   dropDownReset: ->
-    newResultsList = @createListFromData(@originalData)
-    @wrap.find(".selectr-results").replaceWith(newResultsList)
+    unless @settings.external
+      newResultsList = @createListFromData(@originalData)
+      @wrap.find(".selectr-results").replaceWith(newResultsList)
+    else
+      @wrap.find(".selectr-results").empty()
     @wrap.trigger("focus.selectr")
 
   # ### Event binding
@@ -79,7 +72,7 @@ class Selectr
 
     # Dropdown bindings
     @wrap.find(".selectr-drop")
-      .on("click.selectr", ".selectr-item", (e) => @resultItemClick(e))
+    .on("click.selectr", ".selectr-item", (e) => @resultItemClick(e))
 
     # Search input bindings
     @wrap.find(".selectr-search").on
@@ -91,8 +84,8 @@ class Selectr
     # Multi-select wrapper bindings
     if @settings.multiple
       @wrap.find(".selectr-selections")
-        .on("click.selectr", (e) => @selectionWrapClick(e))
-        .on("click.selectr", ".selectr-pill", (e) => @selectionItemClick(e))
+      .on("click.selectr", (e) => @selectionWrapClick(e))
+      .on("click.selectr", ".selectr-pill", (e) => @selectionItemClick(e))
 
   # __[Multi Select]__ Click handler for a "selection" or "pill".
   # For now, it just removes the selection.
@@ -136,7 +129,7 @@ class Selectr
   wrapKeyDown: (e) ->
     stroke = e.which or e.keyCode
     unless @wrap.find(".selectr-drop").is ":visible"
-      if stroke is 40
+      if stroke is 40 and @wrap.find(".selectr-item").length > 0
         @dropDownShow()
         @focusSearchInput()
         e.preventDefault()
@@ -185,7 +178,7 @@ class Selectr
     hasSelection = selected.length isnt 0
     if hasSelection
       @makeSelection()
-      @wrap.find(".selectr-search").val("")
+      @wrap.find(".selectr-search").val("") unless @settings.external
       @dropDownReset()
       @focusFirstItem()
       @scrollResultsToItem()
@@ -246,7 +239,7 @@ class Selectr
       @removeSelection(@wrap.find(".selectr-pill").last())
       e.preventDefault()
 
-  # Key up handler for search input. Used to search against 
+  # Key up handler for search input. Used to search against
   # the data model and then display the new results.
   searchInputKeyUp: (e) ->
     stroke = e.which || e.keyCode
@@ -277,7 +270,7 @@ class Selectr
       # show results if not aleady visible
       @dropDownShow() if not @wrap.find(".selectr-drop").is(":visible")
 
-  # We want to focus the input when the user clicks on the wrap. 
+  # We want to focus the input when the user clicks on the wrap.
   # The input will have a variable width. This event is only binded
   # if is multiple.
   selectionWrapClick: (e) ->
@@ -309,11 +302,13 @@ class Selectr
     if @settings.multiple
       searchField = @wrap.find(".selectr-search")
       defaultStyles = "position:absolute;left:-1000px;top:-1000px;display:none;"
-      styles = ["font-size", "font-style", "font-weight", "font-family",
-                "line-height", "text-transform", "letter-spacing"]
+      styles = [
+        "font-size", "font-style", "font-weight", "font-family",
+        "line-height", "text-transform", "letter-spacing"
+      ]
       for style in styles
         defaultStyles += style + ":" + searchField.css(style) + ";"
-      div = $ "<div />", "style" : defaultStyles
+      div = $ "<div />", "style": defaultStyles
       val = searchField.val()
 
       if val isnt "" and val.length > @settings.placeholder.length
@@ -346,12 +341,12 @@ class Selectr
   # Creates a global data model from &lt;select&gt; data.
   createDataModel: ->
     @data = @originalData = ({
-      label: $(option).attr("label") || "" # is optgroup
-      text: $(option).text()
-      value: $(option).val()
-      disabled: $(option).is(":disabled")
-      selected: $(option).is(":selected")
-    } for option in @select.find("optgroup, option"))
+    label: $(option).attr("label") || "" # is optgroup
+    text: $(option).text()
+    value: $(option).val()
+    disabled: $(option).is(":disabled")
+    selected: $(option).is(":selected")
+    } for option in @input.find("optgroup, option"))
 
   # Used in searchDataModel(), this determines if a match is
   # found in the provided item/option.
@@ -361,11 +356,11 @@ class Selectr
       if match?
         match = if match.length is 1 then match[0] else match
         return {
-          label: item.label
-          text: item.text.replace(match, "<b>" + match + "</b>")
-          value: item.value
-          selected: item.selected
-          disabled: item.disabled
+        label: item.label
+        text: item.text.replace(match, "<b>" + match + "</b>")
+        value: item.value
+        selected: item.selected
+        disabled: item.disabled
         }
 
   # Searches query against the data model and returns matches.
@@ -377,8 +372,12 @@ class Selectr
   # to fire when a user makes a selection.
   makeSelection: ->
     selectedItem = @wrap.find(".selectr-active")
+    #    console.log 'wtf' if @settings.external
     if @settings.multiple
       @addSelection()
+    else if @settings.external
+      @dropDownHide()
+      @wrap.find(".selectr-search").val selectedItem.text()
     else
       @wrap.find(".selectr-toggle span").text selectedItem.text()
       @setSelectValue(selectedItem.data("value"))
@@ -388,7 +387,7 @@ class Selectr
   addSelection: ->
     selectedItem = @wrap.find(".selectr-item.selectr-active")
     return if selectedItem.hasClass("selectr-selected") or
-      selectedItem.hasClass("selectr-disabled")
+    selectedItem.hasClass("selectr-disabled")
     val = selectedItem.data("value")
     selectedItem.addClass("selectr-selected")
     pill = @createSelection(
@@ -411,14 +410,14 @@ class Selectr
   # Helper method for generating the "pill"/selection HTML object.
   createSelection: (text, value, selected, disabled) ->
     return $("<li/>", class: "selectr-pill")
-      .data(value: value, selected: selected, disabled: disabled)
-      .append("<button>#{text}</button>")
+    .data(value: value, selected: selected, disabled: disabled)
+    .append("<button>#{text}</button>")
 
   # Sets the value of the original &lt;select&gt;
   setSelectValue: (val) ->
     match = false
     # update select
-    @select.find("option").each (i, option) ->
+    @input.find("option").each (i, option) ->
       if $(option).val() is val and not match
         $(option).prop("selected", true)
         match = true
@@ -427,31 +426,33 @@ class Selectr
     #    $(@data).each (i, item) -> item.selected = true if item.value is val
     return this
 
-  # Unsets the value of the original &lt;select&gt;. Typically used for multiple.
+  # Unsets the value of the original &lt;select&gt;.
+  # Typically used for multiple.
   unsetSelectValue: (val) ->
     @wrap.find(".selectr-active").removeClass(".selectr-active")
     @wrap.find(".selectr-selected:contains('#{val}')")
-      .removeClass("selectr-selected")
-      .removeClass("selectr-active")
-    opts = @select.find("option[value='#{val}']").prop("selected", false)
+    .removeClass("selectr-selected")
+    .removeClass("selectr-active")
+    opts = @input.find("option[value='#{val}']").prop("selected", false)
     if opts.length is 0 # probably not using value attribute
-      @select.find(":contains('#{val}')").prop("selected", false)
+      @input.find(":contains('#{val}')").prop("selected", false)
     item.selected = false for item in @data when item.value is val
 
   # Show no results in result list.
   showNoResults: (query) ->
     @wrap.find(".selectr-results")
-      .replaceWith("""<ul class="selectr-results no-results">
+    .replaceWith("""<ul class="selectr-results no-results">
           <li class="selectr-item">No results found for <b>#{query}</b></li>
         </ul>""")
 
   # Helper method for generating a row in the result list
   createListItem: (row) ->
-    unless row.label is "" # is optgroup label
+    # is optgroup label
+    unless row.label is "" or typeof row.label is "undefined"
       li = $("<li />", class: "selectr-label").text(row.label)
     else
       button = $("<button />", type: "button")
-        .html """<span>#{row.text}</span>"""
+      .html """<span>#{row.text}</span>"""
       li = $("<li />").append(button).data
         value: row.value
         selected: row.selected
@@ -469,10 +470,10 @@ class Selectr
 
   # Creates a &lt;ul&gt; for the result list.
   createListFromData: (data) ->
-    list = $("<ul />", class: "selectr-results")
+    resultsList = $("<ul />", class: "selectr-results")
     lis = (@createListItem(row) for row in data)
-    list.append lis
-    return list
+    resultsList.append lis
+    return resultsList
 
 
   # Determines what value should be used for the placeholder.
@@ -480,19 +481,19 @@ class Selectr
   getDefaultText: ->
     if @settings.placeholder isnt ""
       @settings.placeholder
-    else if @select.data "placeholder"
-      @select.data "placeholder"
-    else if @select.attr "placeholder"
-      @select.attr "placeholder"
-    else if @select.find("option:empty").text()
-      @select.find("option:empty").text()
+    else if @input.data "placeholder"
+      @input.data "placeholder"
+    else if @input.attr "placeholder"
+      @input.attr "placeholder"
+    else if @input.find("option:empty").text()
+      @input.find("option:empty").text()
     else
       "Select an option..."
 
   # Sets old select's tabindex to -1 and the wrapper's
   # tabindex to whatever the select's tabindex value was.
   setTabIndex: ->
-    @select.attr("tabindex", -1)
+    @input.attr("tabindex", -1)
     tabindex = @settings.tabindex
     if @settings.multiple
       @wrap.find(".selectr-ms-search").attr("tabindex", tabindex)
@@ -506,7 +507,9 @@ class Selectr
     @wrap = $ "<div />",
       class: "selectr-wrap",
       style: wrapStyles
-    toggleBtn = $ "<a />", class: "selectr-toggle", title: "#{@settings.placeholder}"
+    toggleBtn = $ "<a />",
+      class: "selectr-toggle"
+      title: "#{@settings.placeholder}"
     toggleBtn.append("<span></span><div><i></i></div>")
     searchInput = $("<input />",
       class: "selectr-search", type: "text", autocomplete: "off")
@@ -518,7 +521,7 @@ class Selectr
       type: "text",
       class: "selectr-ms-search selectr-search",
       autocomplete: "off",
-      tabindex: @select.attr("tabindex")
+      tabindex: @input.attr("tabindex")
       width: @settings.wrapWidth - 20
 
     resultsList = @createListFromData(@data)
@@ -526,14 +529,14 @@ class Selectr
     if @settings.multiple
       searchWrap.append msSearchInput
       selectionList.append searchWrap
-      multiSelectWrap.append  selectionList
+      multiSelectWrap.append selectionList
       dropdownWrap.append resultsList
       @wrap.append(multiSelectWrap, dropdownWrap).addClass "selectr-multiple"
 
       # Create selections from pre-selected options.
-      if @select.val() isnt "" and @select.val().length isnt 0
+      if @input.val() isnt "" and @input.val().length isnt 0
         hasPreselections = false
-        @select.find("option:selected").each (i, option) =>
+        @input.find("option:selected").each (i, option) =>
           unless $(option).val() is ""
             hasPreselections = true
             pill = @createSelection(
@@ -549,7 +552,7 @@ class Selectr
       dropdownWrap.append searchInput, resultsList
       @wrap.append toggleBtn, dropdownWrap
 
-    @select.hide().after(@wrap).attr("tabindex", "-1")
+    @input.hide().after(@wrap).attr("tabindex", "-1")
 
     # Set default text
     if @settings.multiple
@@ -566,13 +569,73 @@ class Selectr
     validAlpha = (code >= 65 and code <= 90) # alpha a-Z = 65-90
     validNumber = (code >= 48 and code <= 57) # numbers (0-9) = 48-57
     validPunc = (code >= 185 and code <= 192) or
-      (code >= 219 and code <= 222) # punc = 186-192, 219-222
+    (code >= 219 and code <= 222) # punc = 186-192, 219-222
     validMath = (code >= 106 and code <= 111) # math = 106-111
     isSpace = (code == 32) # space = 32
-    isntUpOrDown = (code isnt 38 and code isnt 40) # is not up or down arrow keys
+    isntUpOrDown = (code isnt 38 and code isnt 40) # not up or down arrow keys
     isntBackslash = (code isnt 220) # not backslash
     isntEnter = (code isnt 13) # not enter
     backspaceOrDelete = (code is 8 or code is 46) # backspace/delete = 8, 46
     return isntUpOrDown and isntEnter and isntBackslash and
-      (validAlpha or validNumber or validPunc or
-      validMath or isSpace or backspaceOrDelete)
+    (validAlpha or validNumber or validPunc or
+    validMath or isSpace or backspaceOrDelete)
+
+
+class AjaxSelectr extends Selectr
+  constructor: (@input, providedSettings) ->
+    @constructSettings(providedSettings)
+    @settings = $.extend({}, @settings, {
+      external: true,
+      textNode: "text",
+      valueNode: "value",
+      nodePath: ""
+    })
+    @createAjaxSelectrWrap()
+    @bindEvents()
+
+  createAjaxSelectrWrap: ->
+    wrapStyles = "width: #{@settings.wrapWidth}px;"
+    wrapStyles += "max-height: #{parseInt(@settings.wrapHeight, 10)}px;"
+
+    @wrap = $ "<div />",
+      class: "selectr-wrap",
+      style: wrapStyles
+    @input.attr "autocomplete", "off"
+    searchWrap = $("<div />", class: "selectr-search-wrap")
+    dropdownWrap = $("<div />", class: "selectr-drop")
+    resultsList = $("<ul />", class: "selectr-results")
+    clonedInput = @input.clone()
+    clonedInput.addClass "selectr-external-search selectr-search"
+    searchWrap.append clonedInput
+    dropdownWrap.append resultsList
+    @wrap.append(searchWrap, dropdownWrap)
+    @input.after(@wrap).remove()
+
+  searchInputKeyUp: (e) ->
+    stroke = e.which or e.keyCode
+    query = e.currentTarget.value
+    if query.length > 2 and @isValidKeyCode(stroke)
+      $.getJSON @settings.dataUrl, (response) =>
+        @data = response
+        resultData = @searchDataModel(query, response)
+        if resultData.length > 0
+          newResultsList = @createListFromData(resultData)
+          @dropDownShow()
+          @wrap.find(".selectr-results").replaceWith(newResultsList)
+          @wrap.trigger("focus.selectr")
+        else
+          @showNoResults(query)
+
+
+# ## Expose to jQuery
+# Loops through each jQuery selection and returns `this`
+# for chainability. Creates and applies a new instance
+# of Selectr as a data attribute accessible via:
+# `$("#your-select").data("selectr")`
+$.fn.extend
+  selectr: (options) ->
+    return this.each ->
+      if $(this).is("select")
+        $(this).data "selectr", new Selectr $(this), options
+      else if $(this).is("input") or options.external
+        $(this).data "selectr", new AjaxSelectr $(this), options

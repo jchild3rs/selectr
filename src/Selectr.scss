@@ -1,4 +1,6 @@
 @import "compass";
+@import "icon/*.png";
+@include all-icon-sprites(true);
 
 $base-spacing-unit: 3px;
 $border-color: #aaa;
@@ -7,9 +9,8 @@ $background-color: #fdfdfd;
 $icon-spacing: 5px;
 $active-color: #2f4e7d;
 $text-color: #333;
+$search-input-padding: 6px 0 6px 8px;
 
-@import "icon/*.png";
-@include all-icon-sprites(true);
 
 .icon-sprite {
   display: inline-block;
@@ -225,7 +226,7 @@ $text-color: #333;
   .selectr-ms-search {
     background: transparent;
     border: 0;
-    padding: 6px 0 6px 8px;
+    padding: $search-input-padding;
     width: 46%;
     min-width: 40px;
     &:focus {
@@ -235,6 +236,23 @@ $text-color: #333;
 }
 .selectr-hidden {
   display: none;
+}
+
+.selectr-search-wrap {
+  @extend .selectr-toggle;
+  @include pie-clearfix;
+  background: transparent;
+}
+.selectr-external-search {
+  @include box-sizing(border-box);
+  width: 100%;
+  border: 0;
+  padding: $search-input-padding;
+  margin: 0;
+  background: transparent;
+  &:focus, &:active {
+    outline: none;
+  }
 }
 .selectr-pill {
   button {
